@@ -4,10 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Clinic Run — Select Area</title>
-
-  <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json">
-
   <style>
     :root{--bg:#f2f5f9;--card:#ffffff;--muted:#6b7280;--blue:#0b69ff;--green:#10b981;--grey:#9ca3af}
     html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
@@ -19,13 +16,11 @@
     .choices{display:flex;gap:10px;justify-content:space-between;margin-top:12px}
     .btn{flex:1;padding:14px;border-radius:10px;border:0;font-weight:600;font-size:16px}
     .btn-choose{background:#eef2ff;color:var(--blue)}
-
     .parse-area{margin-top:14px}
     textarea{width:100%;min-height:120px;border-radius:10px;padding:12px;border:1px solid #e5e7eb;resize:vertical}
     .row{display:flex;gap:8px;margin-top:10px}
     .primary{background:var(--blue);color:white;padding:12px;border-radius:10px;border:0;flex:1}
     .secondary{background:white;border:1px solid #e5e7eb;padding:12px;border-radius:10px;color:var(--muted)}
-
     .list{margin-top:14px}
     .card{background:var(--card);padding:12px;border-radius:12px;margin-bottom:10px;display:flex;flex-direction:column;box-shadow:0 4px 10px rgba(2,6,23,0.04)}
     .card .top{display:flex;justify-content:space-between;align-items:center}
@@ -42,24 +37,22 @@
     .qty.selected{background:#111827;color:white}
     .done{background:#d1fae5;color:#065f46;padding:8px;border-radius:8px;border:0}
     .undo{background:#fff3cd;color:#7c2d12;padding:8px;border-radius:8px;border:0}
-
     footer{position:sticky;bottom:0;padding:12px;background:linear-gradient(0deg,rgba(242,245,249,1),rgba(242,245,249,0));}
     .progress-wrap{display:flex;align-items:center;gap:10px}
     .progress{background:#e6eefb;height:12px;border-radius:10px;flex:1;overflow:hidden}
     .progress > i{background:var(--blue);display:block;height:100%;width:0%}
     .endtrip{margin-top:10px;background:#111827;color:white;padding:12px;border-radius:10px;border:0;width:100%}
-
     .add-top{display:flex;gap:8px;margin-bottom:8px}
     .add-top input{flex:1;padding:10px;border-radius:8px;border:1px solid #e6e7eb}
     .link{font-size:13px;color:var(--blue);text-decoration:underline;cursor:pointer}
-
     @media(min-width:520px){body{background:#fff} .screen{box-shadow:0 6px 20px rgba(2,6,23,0.06);border-radius:14px;margin-top:20px}}
   </style>
 </head>
 
 <body>
   <div class="screen" id="app">
-    <!-- CHOOSE AREA -->
+
+    <!-- CHOOSE -->
     <div id="choose-screen" class="big-card">
       <h1>Select area to start</h1>
       <div class="choices">
@@ -68,6 +61,18 @@
         <button class="btn btn-choose" data-area="Cover">Cover</button>
       </div>
       <p style="margin-top:12px;color:var(--muted)">Choose one to continue — this only sets a label for the run.</p>
+    </div>
+
+    <!-- COVER START SCREEN -->
+    <div id="cover-start-screen" class="big-card" style="display:none">
+      <h1>Start Location</h1>
+      <button class="primary" id="cover-gps-btn">Use My GPS Location</button>
+      <div style="text-align:center;margin:10px 0;font-size:13px;color:var(--muted)">— OR —</div>
+      <input id="cover-address-input" placeholder="Enter starting address (e.g., Streatham, Wimbledon)" style="width:100%;padding:12px;border-radius:10px;border:1px solid #e5e7eb" />
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="primary" id="cover-address-btn" style="flex:1">Use This Address</button>
+        <button class="secondary" id="cover-back-btn">Back</button>
+      </div>
     </div>
 
     <!-- INPUT SCREEN -->
@@ -112,121 +117,313 @@
           <div class="progress"><i id="progress-bar"></i></div>
           <div style="font-weight:700" id="progress-text">0%</div>
         </div>
-        <button id="endtrip" class="endtrip">End Trip</button>
       </footer>
     </div>
   </div>
 
-  <!-- MAIN APP SCRIPT -->
   <script>
-    /*************** MASTER DATA (same as your version) *****************/
-    const MASTER = [
-      {code:'Z2K',name:'Blue Cross Vets Merton', address:'88–92 Merton High St, Merton, SW19 1BD'},
-      {code:'7FO17',name:'Wimbledon Veterinary Surgery', address:'170–172 Merton Road, Wimbledon, SW19 1EG'},
-      {code:'7KY13',name:'Kydd & Kydd (Medivet Wimbledon)', address:'1–3 Leopold Rd, Wimbledon, SW19 7BB'},
-      {code:'TH1S',name:'The Corner Veterinary Clinic', address:'1 Stayton Road, Sutton, SM1 1QY'},
-      {code:'PR11',name:'Priory Vet Surgeons Ltd (Tadworth)', address:'Northlodge, 11 High St, Tadworth, KT20 5SD'},
-      {code:'KGVS',name:'Kriek & Gibson Vet Surgery', address:'38 Brighton Rd, Banstead, Surrey, SM7 1BT'},
-      {code:'WL3A',name:'DNA Grp – Winton Lodge Epsom', address:'36 Ashley Road, Epsom, KT18 5BH'},
-      {code:'HEWP',name:'Voo Vet Group – Worcester Park', address:'5 The Parade, Vale Road, Worcester Park, KT4 7EE'},
-      {code:'WICO',name:'Medivet Epsom Pound', address:'Court Lodge, Pound Lane, Epsom, KT19 8SB'},
-      {code:'ARVS',name:'CVS Avenue Road Vet Surgeons', address:'Avenue Road, Wallington, Surrey, SM6 9QF'},
-      {code:'PKS',name:'Parkside Vet Surgery', address:'61 Ruskin Rd, Carshalton, SM5 3DD'},
-      {code:'OR1M',name:'Optivet London (South)', address:'Inside Pet Vet, 145 Morden Rd, Mitcham, CR4 4DB'},
-      {code:'MIUG',name:'Mitcham Vet Clinic', address:'4 Upper Green East, Mitcham, CR4 2PA'},
-      {code:'TO5L',name:'DNA Grp – Tooting', address:'5 London Road, SW17 9JR'},
-      {code:'7AN67',name:'Animal Choice', address:'67 Upper Tooting Park, Tooting, SW17 7SU'},
-      {code:'VO3B',name:'Voo Vets – Balham', address:'31 Bedford Rd, Balham, SW12 9EY'},
-      {code:'7ST10',name:'Streatham Hill Vet Surgery', address:'101 Sternhold Ave, Streatham Hill, SW2 4PF'},
-      {code:'HY64',name:'Voo Vets – Battersea', address:'644a Wandsworth Road, London, SW8 3JW'},
-      {code:'7AL85',name:'All Creatures Vet Surgery', address:'85 Lavender Hill, Battersea, SW11 5QL'},
-      {code:'BA4B',name:'Battersea Dogs & Cats Home', address:'4 Battersea Park Road, London, SW8 4AA'},
-      {code:'7EL55',name:'Elizabeth Street Vet Clinic', address:'55 Elizabeth St, London, SW1W 9PP'},
-      {code:'Z1K',name:'Blue Cross Animal Hospital (Victoria)', address:'Shephard House, 1–5 Hugh St, Victoria, SW1V 1QQ'},
-      {code:'VBR',name:'Virtue Vets – Chelsea', address:'295–297 Brompton Rd, London, SW3 2DY'},
-      {code:'7BR96',name:'Brompton Vets', address:'90 Fulham Road, London, SW3 6HR'},
-      {code:'CFU',name:'Creature Comforts – Chelsea', address:'281 Fulham Road, Chelsea, SW10 9PZ'},
-      {code:'VBO',name:'Virtue Vets – Chelsea The Boltons', address:'351 Fulham Road, Chelsea, SW10 9TW'},
-      {code:'CH36',name:'Waggintails – Chelsea Vet Clinic', address:'364 Fulham Rd, Chelsea, SW10 9UU'},
-      {code:'7AB85',name:'Abingdon Vet Surgery', address:'85 Earls Court Road, London, W8 6EF'},
-      {code:'7ADAD',name:'The Holland Park Vet Clinic', address:'7 Addison Ave, Holland Park, London, W11 4QS'},
-      {code:'CCN',name:'Creature Comforts – Notting Hill', address:'241 Westbourne Grove, Notting Hill, W11 2SE'},
-      {code:'VIN',name:'Virtue Vets – Notting Hill', address:'20 Chepstow Corner, Chepstow Place, Notting Hill, W2 4XE'},
-      {code:'CCS',name:'Creature Comforts – St Johns Wood', address:'9–11 St Johns Wood High St, NW8 7NG'},
-      {code:'VVM',name:'Virtue Vet – Marylebone', address:'6 Nottingham Street, Marylebone, W1U 5EJ'},
-      {code:'Z4K',name:'Blue Cross Animal Hospital (Hammersmith)', address:'Argyle Place, Hammersmith, W6 0RQ'},
-      {code:'CPU',name:'Creature Comforts – Putney', address:'212 Putney Bridge Rd, SW15 2NA'},
-      {code:'7DA8B',name:'Voo Vet Group – Wandsworth', address:'8 Barmouth Road, London, SW18 2DN'},
-      {code:'SC3E',name:'Scourfield Vet Services', address:'49 Heythorp Street, London, SW18 5BS'},
-      {code:'IS1M',name:'Islander Vets', address:'129 Manor Drive North, New Malden, KT3 5PD'},
+    /* -------------------------
+       MASTER LISTS (Merton + Surrey)
+       ------------------------- */
+
+    const MASTER_MERTON = [
+      {code:'Z2K',name:'Blue Cross Vets Merton',address:'88–92 Merton High St, Merton, SW19 1BD'},
+      {code:'7FO17',name:'Wimbledon Veterinary Surgery',address:'170–172 Merton Road, Wimbledon, SW19 1EG'},
+      {code:'7KY13',name:'Kydd & Kydd (Medivet Wimbledon)',address:'1–3 Leopold Rd, Wimbledon, SW19 7BB'},
+      {code:'TH1S',name:'The Corner Veterinary Clinic',address:'1 Stayton Road, Sutton, SM1 1QY'},
+      {code:'PR11',name:'Priory Vet Surgeons Ltd (Tadworth)',address:'Northlodge, 11 High St, Tadworth, KT20 5SD'},
+      {code:'KGVS',name:'Kriek & Gibson Vet Surgery',address:'38 Brighton Rd, Banstead, Surrey, SM7 1BT'},
+      {code:'WL3A',name:'DNA Grp – Winton Lodge Epsom',address:'36 Ashley Road, Epsom, KT18 5BH'},
+      {code:'HEWP',name:'Voo Vet Group – Worcester Park',address:'5 The Parade, Vale Road, Worcester Park, KT4 7EE'},
+      {code:'WICO',name:'Medivet Epsom Pound',address:'Court Lodge, Pound Lane, Epsom, KT19 8SB'},
+      {code:'ARVS',name:'CVS Avenue Road Vet Surgeons',address:'Avenue Road, Wallington, Surrey, SM6 9QF'},
+      {code:'PKS',name:'Parkside Vet Surgery',address:'61 Ruskin Rd, Carshalton, SM5 3DD'},
+      {code:'OR1M',name:'Optivet London (South)',address:'Inside Pet Vet, 145 Morden Rd, Mitcham, CR4 4DB'},
+      {code:'MIUG',name:'Mitcham Vet Clinic',address:'4 Upper Green East, Mitcham, CR4 2PA'},
+      {code:'TO5L',name:'DNA Grp – Tooting',address:'5 London Road, SW17 9JR'},
+      {code:'AV4L',name:'Advanced Vert Care Streatham',address:'49 Leigham Court Road, Streatham, SW16 2NF'}, // inserted
+      {code:'7AN67',name:'Animal Choice',address:'67 Upper Tooting Park, Tooting, SW17 7SU'},
+      {code:'VO3B',name:'Voo Vets – Balham',address:'31 Bedford Rd, Balham, SW12 9EY'},
+      {code:'7ST10',name:'Streatham Hill Vet Surgery',address:'101 Sternhold Ave, Streatham Hill, SW2 4PF'},
+      {code:'HY64',name:'Voo Vets – Battersea',address:'644a Wandsworth Road, London, SW8 3JW'},
+      {code:'7AL85',name:'All Creatures Vet Surgery',address:'85 Lavender Hill, Battersea, SW11 5QL'},
+      {code:'BA4B',name:'Battersea Dogs & Cats Home',address:'4 Battersea Park Road, London, SW8 4AA'},
+      {code:'7EL55',name:'Elizabeth Street Vet Clinic',address:'55 Elizabeth St, London, SW1W 9PP'},
+      {code:'Z1K',name:'Blue Cross Animal Hospital (Victoria)',address:'Shephard House, 1–5 Hugh St, Victoria, SW1V 1QQ'},
+      {code:'VBR',name:'Virtue Vets – Chelsea',address:'295–297 Brompton Rd, London, SW3 2DY'},
+      {code:'7BR96',name:'Brompton Vets',address:'90 Fulham Road, London, SW3 6HR'},
+      {code:'CFU',name:'Creature Comforts – Chelsea',address:'281 Fulham Road, Chelsea, SW10 9PZ'},
+      {code:'VBO',name:'Virtue Vets – Chelsea The Boltons',address:'351 Fulham Road, Chelsea, SW10 9TW'},
+      {code:'CH36',name:'Waggintails – Chelsea Vet Clinic',address:'364 Fulham Rd, Chelsea, SW10 9UU'},
+      {code:'7AB85',name:'Abingdon Vet Surgery',address:'85 Earls Court Road, London, W8 6EF'},
+      {code:'7ADAD',name:'The Holland Park Vet Clinic',address:'7 Addison Ave, Holland Park, London, W11 4QS'},
+      {code:'CCN',name:'Creature Comforts – Notting Hill',address:'241 Westbourne Grove, Notting Hill, W11 2SE'},
+      {code:'VIN',name:'Virtue Vets – Notting Hill',address:'20 Chepstow Corner, Chepstow Place, Notting Hill, W2 4XE'},
+      {code:'CCS',name:'Creature Comforts – St Johns Wood',address:'9–11 St Johns Wood High St, NW8 7NG'},
+      {code:'VVM',name:'Virtue Vet – Marylebone',address:'6 Nottingham Street, Marylebone, W1U 5EJ'},
+      {code:'Z4K',name:'Blue Cross Animal Hospital (Hammersmith)',address:'Argyle Place, Hammersmith, W6 0RQ'},
+      {code:'CPU',name:'Creature Comforts – Putney',address:'212 Putney Bridge Rd, SW15 2NA'},
+      {code:'7DA8B',name:'Voo Vet Group – Wandsworth',address:'8 Barmouth Road, London, SW18 2DN'},
+      {code:'SC3E',name:'Scourfield Vet Services',address:'49 Heythorp Street, London, SW18 5BS'},
+      {code:'IS1M',name:'Islander Vets',address:'129 Manor Drive North, New Malden, KT3 5PD'}
+    ];
+
+    const MASTER_SURREY = [
+      {code:'HEWP',name:'Voo Vet Group – Worcester Park',address:'5 The Parade, Vale Road, Worcester Park, KT4 7EE'},
+      {code:'WL3A',name:'DNA Grp – Winton Lodge Epsom',address:'36 Ashley Road, Epsom, KT18 5BH'},
+      {code:'PR11',name:'Priory Vet Surgeons Ltd (Tadworth)',address:'Northlodge, 11 High St, Tadworth, KT20 5SD'},
+      {code:'KGVS',name:'Kriek & Gibson Vet Surgery',address:'38 Brighton Rd, Banstead, Surrey, SM7 1BT'},
+      {code:'ARVS',name:'CVS Avenue Road Vet Surgeons',address:'Avenue Road, Wallington, Surrey, SM6 9QF'},
+      {code:'PKS',name:'Parkside Vet Surgery',address:'61 Ruskin Rd, Carshalton, SM5 3DD'},
+      {code:'TH1S',name:'The Corner Veterinary Clinic',address:'1 Stayton Road, Sutton, SM1 1QY'},
+      {code:'OR1M',name:'Optivet London (South)',address:'Inside Pet Vet, 145 Morden Rd, Mitcham, CR4 4DB'},
+      {code:'MIUG',name:'Mitcham Vet Clinic',address:'4 Upper Green East, Mitcham, CR4 2PA'},
+      {code:'TO5L',name:'DNA Grp – Tooting',address:'5 London Road, SW17 9JR'},
+      {code:'AV4L',name:'Advanced Vert Care Streatham',address:'49 Leigham Court Road, Streatham, SW16 2NF'},
+      {code:'7AN67',name:'Animal Choice',address:'67 Upper Tooting Park, Tooting, SW17 7SU'},
+      {code:'VO3B',name:'Voo Vets – Balham',address:'31 Bedford Rd, Balham, SW12 9EY'},
+      {code:'7ST10',name:'Streatham Hill Vet Surgery',address:'101 Sternhold Ave, Streatham Hill, SW2 4PF'},
+      {code:'HY64',name:'Voo Vets – Battersea',address:'644a Wandsworth Road, London, SW8 3JW'},
+      {code:'7AL85',name:'All Creatures Vet Surgery',address:'85 Lavender Hill, Battersea, SW11 5QL'},
+      {code:'BA4B',name:'Battersea Dogs & Cats Home',address:'4 Battersea Park Road, London, SW8 4AA'},
+      {code:'7EL55',name:'Elizabeth Street Vet Clinic',address:'55 Elizabeth St, London, SW1W 9PP'},
+      {code:'Z1K',name:'Blue Cross Animal Hospital (Victoria)',address:'Shephard House, 1–5 Hugh St, Victoria, SW1V 1QQ'},
+      {code:'VBR',name:'Virtue Vets – Chelsea',address:'295–297 Brompton Rd, London, SW3 2DY'},
+      {code:'7BR96',name:'Brompton Vets',address:'90 Fulham Road, London, SW3 6HR'},
+      {code:'CFU',name:'Creature Comforts – Chelsea',address:'281 Fulham Road, Chelsea, SW10 9PZ'},
+      {code:'VBO',name:'Virtue Vets – Chelsea The Boltons',address:'351 Fulham Road, Chelsea, SW10 9TW'},
+      {code:'CH36',name:'Waggintails – Chelsea Vet Clinic',address:'364 Fulham Rd, Chelsea, SW10 9UU'},
+      {code:'7AB85',name:'Abingdon Vet Surgery',address:'85 Earls Court Road, London, W8 6EF'},
+      {code:'7ADAD',name:'The Holland Park Vet Clinic',address:'7 Addison Ave, Holland Park, London, W11 4QS'},
+      {code:'CCN',name:'Creature Comforts – Notting Hill',address:'241 Westbourne Grove, Notting Hill, W11 2SE'},
+      {code:'VIN',name:'Virtue Vets – Notting Hill',address:'20 Chepstow Corner, Chepstow Place, Notting Hill, W2 4XE'},
+      {code:'CCS',name:'Creature Comforts – St Johns Wood',address:'9–11 St Johns Wood High St, NW8 7NG'},
+      {code:'VVM',name:'Virtue Vet – Marylebone',address:'6 Nottingham Street, Marylebone, W1U 5EJ'},
+      {code:'Z4K',name:'Blue Cross Animal Hospital (Hammersmith)',address:'Argyle Place, Hammersmith, W6 0RQ'},
+      {code:'CPU',name:'Creature Comforts – Putney',address:'212 Putney Bridge Rd, SW15 2NA'},
+      {code:'7DA8B',name:'Voo Vet Group – Wandsworth',address:'8 Barmouth Road, London, SW18 2DN'},
+      {code:'SC3E',name:'Scourfield Vet Services',address:'49 Heythorp Street, London, SW18 5BS'},
+      {code:'Z2K',name:'Blue Cross Vets Merton',address:'88–92 Merton High St, Merton, SW19 1BD'},
+      {code:'7FO17',name:'Wimbledon Veterinary Surgery',address:'170–172 Merton Road, Wimbledon, SW19 1EG'},
+      {code:'IS1M',name:'Islander Vets',address:'129 Manor Drive North, New Malden, KT3 5PD'}
     ];
 
     const FINAL = {code:'DROP',name:'Orchard Business Park, Forsyth Rd, Woking GU21 5SB',address:'Orchard Business Park, Forsyth Rd, Woking GU21 5SB'};
 
     const INSTRUCTIONS = {
-      CFU: 'Unlock door with square headed key...',
-      CPU: 'Box is at the back...',
-      TO5L: 'Open key safe...',
-      VBO: 'Open gate with padlock...',
-      CCN: 'Open door with large key...',
-      CCS: 'Entrance is by side road...',
-      VVM: 'Padlock 02024...',
-      SC3E: 'Front garden shed...',
-      OR1M: 'Box on side of car park, code 936.'
+      CFU: 'Unlock door with square headed key. Remove key. Unlock door magnet with pin code 0725. Disarm alarm with code 0725 and tick. Pick up package from reception desk. If no package, take a photograph. Arm alarm 0725 and tick. Press magnet release to open door. Lock door with key.',
+      CPU: 'Box is at the back on a side road (Deodar Road), alleyway all the way at the end of alley.',
+      TO5L: 'Open key safe with code 7821. Open door with key from safe. Sample box behind the door. Lock door with key from safe. Put key back into safe and change code.',
+      VBO: 'Open gate with padlock key. Walk all the way to the back. Box is on the left side. Lock gate with padlock key.',
+      CCN: 'Open door with large key. Enter code 1216 to unlock magnet. Enter code 2513 to disarm alarm. Take sample. Arm alarm 2513. Lock door with large key.',
+      CCS: 'Entrance is by side road with gate. Code to enter gate: 9876. Sample is by tiny alleyway after few doors on the right. Code to exit gate: 9876.',
+      VVM: 'Padlock to go down 02024. Padlock sometimes gets stuck; pull harder to unlock.',
+      SC3E: 'Front garden of house at 49 Heythorp Street SW18 5BS. Sample is inside front garden shed. Padlock code 1910. Lock shed when finished.',
+      OR1M: 'Box is located on the side of the car park where the recycling trolleys are. Drive straight when you turn into the road. Code to open the box: 936.',
+      AV4L: 'No special instructions.'
     };
 
-    /*************** STATE + STORAGE ***************/
+    /* -------------------------
+       COORDINATES (approximate)
+       These are approximate lat/lon values to enable Cover routing.
+       Replace any coordinates with precise values for best routes.
+       ------------------------- */
+    const CLINIC_COORDS = {
+      Z2K: {lat:51.409, lon:-0.177},
+      '7FO17': {lat:51.4210, lon:-0.2083},
+      '7KY13': {lat:51.424, lon:-0.205},
+      TH1S: {lat:51.364, lon:-0.193},
+      PR11: {lat:51.278, lon:-0.239},
+      KGVS: {lat:51.311, lon:-0.187},
+      WL3A: {lat:51.334, lon:-0.270},
+      HEWP: {lat:51.364, lon:-0.216},
+      WICO: {lat:51.334, lon:-0.268},
+      ARVS: {lat:51.370, lon:-0.161},
+      PKS: {lat:51.350, lon:-0.163},
+      OR1M: {lat:51.403, lon:-0.169},
+      MIUG: {lat:51.401, lon:-0.169},
+      TO5L: {lat:51.428, lon:-0.164},
+      AV4L: {lat:51.431, lon:-0.128},
+      '7AN67': {lat:51.427, lon:-0.165},
+      VO3B: {lat:51.442, lon:-0.152},
+      '7ST10': {lat:51.433, lon:-0.116},
+      HY64: {lat:51.475, lon:-0.156},
+      '7AL85': {lat:51.472, lon:-0.159},
+      BA4B: {lat:51.480, lon:-0.154},
+      '7EL55': {lat:51.497, lon:-0.135},
+      Z1K: {lat:51.495, lon:-0.141},
+      VBR: {lat:51.496, lon:-0.162},
+      '7BR96': {lat:51.492, lon:-0.190},
+      CFU: {lat:51.488, lon:-0.162},
+      VBO: {lat:51.488, lon:-0.162},
+      CH36: {lat:51.487, lon:-0.163},
+      '7AB85': {lat:51.494, lon:-0.192},
+      '7ADAD': {lat:51.512, lon:-0.204},
+      CCN: {lat:51.512, lon:-0.206},
+      VIN: {lat:51.513, lon:-0.202},
+      CCS: {lat:51.532, lon:-0.174},
+      VVM: {lat:51.519, lon:-0.138},
+      Z4K: {lat:51.492, lon:-0.227},
+      CPU: {lat:51.463, lon:-0.2158},
+      '7DA8B': {lat:51.444, lon:-0.174},
+      SC3E: {lat:51.452, lon:-0.181},
+      IS1M: {lat:51.396, lon:-0.252}
+    };
+
+    /* -------------------------
+       STATE & STORAGE
+       ------------------------- */
     const STORAGE_KEY = 'clinicRun_v1';
     let state = {area:null, parsed:[]};
+    let coverStartPoint = null; // {lat,lon}
 
     function load(){
       const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){ try{state=JSON.parse(raw)}catch(e){} }
+      if(raw) try{ state = JSON.parse(raw); } catch(e){}
     }
-
     function save(){
       state.savedAt = new Date().toISOString();
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
-      document.getElementById('saved-ind').innerText =
-        new Date(state.savedAt).toLocaleTimeString();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      const el = document.getElementById('saved-ind');
+      if(el) el.innerText = new Date(state.savedAt).toLocaleTimeString();
     }
 
-    /*************** FIXED PARSER FUNCTION ***************/
+    /* -------------------------
+       PARSER (robust)
+       ------------------------- */
     function parseText(text){
-      // Remove TOTAL lines entirely
-      const noTotals = text.replace(/TOTAL\s+\d+/ig, '');
-
-      // Split into safe tokens
-      const tokens = noTotals
-        .split(/[^A-Za-z0-9]+/)
-        .map(t => t.trim().toUpperCase())
-        .filter(Boolean);
-
-      // Remove days
+      const noTotals = text.replace(/TOTAL\s+\d+/ig,'');
+      const tokens = noTotals.split(/[^A-Za-z0-9]+/).map(t=>t.trim().toUpperCase()).filter(Boolean);
       const days = ['MON','TUE','WED','THU','FRI','SAT','SUN','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
-      let filtered = tokens.filter(t => !days.includes(t));
-
-      // Remove route/date numbers (only if ALL digits)
-      filtered = filtered.filter(t => !/^\d+$/.test(t));
-
-      // Valid codes = alphanumeric 2–6 length
-      const candidate = filtered.filter(t => /^[A-Z0-9]{2,6}$/.test(t));
-
-      // Dedupe
+      let filtered = tokens.filter(t=>!days.includes(t));
+      filtered = filtered.filter(t=>!/^\d+$/.test(t));
+      const candidate = filtered.filter(t=>/^[A-Z0-9]{2,6}$/.test(t));
       const seen = new Set();
-      const uniq = candidate.filter(c=>{
-        if(seen.has(c)) return false;
-        seen.add(c);
-        return true;
+      return candidate.filter(c=>{ if(seen.has(c)) return false; seen.add(c); return true; });
+    }
+
+    /* -------------------------
+       UTIL: get master depending on area
+       ------------------------- */
+    function getMasterList(){
+      if(state.area === 'Surrey') return MASTER_SURREY;
+      return MASTER_MERTON;
+    }
+
+    /* -------------------------
+       DISTANCE & ROUTE OPTIMISER
+       - nearest neighbour + 2-opt improvement
+       ------------------------- */
+    function haversine(a,b){
+      const R = 6371;
+      const dLat = (b.lat - a.lat) * Math.PI/180;
+      const dLon = (b.lon - a.lon) * Math.PI/180;
+      const lat1 = a.lat * Math.PI/180;
+      const lat2 = b.lat * Math.PI/180;
+      const x = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
+    }
+
+    function twoOpt(route){
+      // route: array of objects with coords
+      let improved = true;
+      while(improved){
+        improved = false;
+        for(let i=1;i<route.length-2;i++){
+          for(let k=i+1;k<route.length-1;k++){
+            const a = route[i-1].coords;
+            const b = route[i].coords;
+            const c = route[k].coords;
+            const d = route[k+1].coords;
+            const before = haversine(a,b) + haversine(c,d);
+            const after = haversine(a,c) + haversine(b,d);
+            if(after + 0.000001 < before){
+              // reverse segment i..k
+              const seg = route.slice(i,k+1).reverse();
+              route.splice(i, k-i+1, ...seg);
+              improved = true;
+            }
+          }
+        }
+      }
+      return route;
+    }
+
+    function optimizeCoverRoute(codes){
+      // Build clinic objects from Merton master (we need name/address)
+      const masterAll = MASTER_MERTON.concat(MASTER_SURREY).reduce((acc,m)=>{acc[m.code]=m; return acc;},{});
+      // collect unique codes that exist in master or unknown
+      const objs = codes.map(code=>{
+        const found = masterAll[code];
+        return {
+          code,
+          name: found ? found.name : code,
+          address: found ? found.address : '',
+          coords: CLINIC_COORDS[code] || null
+        };
+      }).filter(Boolean);
+
+      // If any coord missing, attempt to approximate from address text
+      objs.forEach(o=>{
+        if(!o.coords){
+          // try to find a code in CLINIC_COORDS by matching substring of address
+          const addr = (o.address||'').toLowerCase();
+          for(const k in CLINIC_COORDS){
+            // cheap heuristic: compare borough keywords (streatham, epsom, wimbledon, putney, woking...)
+            if(addr.includes('streatham') && k === 'AV4L'){ o.coords = CLINIC_COORDS[k]; break; }
+            if(addr.includes('epsom') && k === 'WL3A'){ o.coords = CLINIC_COORDS[k]; break; }
+            if(addr.includes('wimbledon') && k === '7FO17'){ o.coords = CLINIC_COORDS[k]; break; }
+            if(addr.includes('merton') && k === 'Z2K'){ o.coords = CLINIC_COORDS[k]; break; }
+            if(addr.includes('tooting') && k === 'TO5L'){ o.coords = CLINIC_COORDS[k]; break; }
+            if(addr.includes('putney') && k === 'CPU'){ o.coords = CLINIC_COORDS[k]; break; }
+            if(addr.includes('wandsworth') && k === '7DA8B'){ o.coords = CLINIC_COORDS[k]; break; }
+            if(addr.includes('epsom') && k === 'WICO'){ o.coords = CLINIC_COORDS[k]; break; }
+          }
+        }
+        // last fallback: if still null, place near central London (so routing still works)
+        if(!o.coords) o.coords = {lat:51.46, lon:-0.15};
       });
 
-      return uniq;
+      // Start point:
+      const start = coverStartPoint || {lat:51.46, lon:-0.15}; // fallback center
+      const drop = {lat:51.3190, lon:-0.5584}; // Woking final drop
+
+      // Nearest neighbour
+      let remaining = objs.slice();
+      const sequence = [];
+      let current = start;
+      while(remaining.length){
+        let nearestIdx = 0;
+        let nearestDist = haversine(current, remaining[0].coords);
+        for(let i=1;i<remaining.length;i++){
+          const d = haversine(current, remaining[i].coords);
+          if(d < nearestDist){ nearestDist = d; nearestIdx = i; }
+        }
+        const next = remaining.splice(nearestIdx,1)[0];
+        sequence.push(next);
+        current = next.coords;
+      }
+
+      // append final drop as an object
+      sequence.push({...FINAL, coords: drop});
+
+      // run 2-opt to improve order if >3 points
+      if(sequence.length > 3){
+        // prepare for twoOpt: need coords on all items (they have .coords)
+        const improved = twoOpt(sequence);
+        return improved.map(s=>({code:s.code, name:s.name, address:s.address, info:INSTRUCTIONS[s.code]||''}));
+      }
+
+      return sequence.map(s=>({code:s.code, name:s.name, address:s.address, info:INSTRUCTIONS[s.code]||''}));
     }
 
-    /*************** UI ELEMENTS ***************/
+    /* -------------------------
+       UI + Flow
+       ------------------------- */
     const chooseScreen = document.getElementById('choose-screen');
     const inputScreen = document.getElementById('input-screen');
     const listScreen = document.getElementById('list-screen');
+    const coverStartScreen = document.getElementById('cover-start-screen');
     const rawInput = document.getElementById('raw-input');
     const parseBtn = document.getElementById('parse-btn');
     const clearBtn = document.getElementById('clear-btn');
@@ -236,17 +433,62 @@
     const areaLabel = document.getElementById('area-label');
     const runInfo = document.getElementById('run-info');
 
-    document.getElementById('back-to-choose').addEventListener('click',()=>show('choose'));
+    document.getElementById('back-to-choose').addEventListener('click', ()=> show('choose'));
 
-    /*************** SCREEN FLOW ***************/
-    document.querySelectorAll('.btn-choose').forEach(b=>b.addEventListener('click',e=>{
-      state.area = e.target.dataset.area;
-      areaLabel.innerText = state.area + ' — Paste & parse';
-      show('input');
+    document.querySelectorAll('.btn-choose').forEach(b => b.addEventListener('click', e=>{
+      const a = e.target.dataset.area;
+      state.area = a;
+      if(a === 'Cover'){
+        show('cover-start');
+      } else {
+        areaLabel.innerText = a + ' — Paste & parse';
+        show('input');
+      }
       save();
     }));
 
-    parseBtn.addEventListener('click',()=>{
+    document.getElementById('cover-back-btn').addEventListener('click', ()=> show('choose'));
+
+    document.getElementById('cover-gps-btn').addEventListener('click', ()=>{
+      if(!navigator.geolocation){ alert('GPS not supported in this browser'); return; }
+      navigator.geolocation.getCurrentPosition(pos=>{
+        coverStartPoint = {lat: pos.coords.latitude, lon: pos.coords.longitude};
+        areaLabel.innerText = 'Cover — Paste & parse';
+        show('input');
+      }, err => alert('GPS error: ' + err.message));
+    });
+
+    document.getElementById('cover-address-btn').addEventListener('click', ()=>{
+      const addr = document.getElementById('cover-address-input').value.trim();
+      if(!addr){ alert('Enter an address or use GPS'); return; }
+      geocodeAddress(addr).then(coord=>{
+        coverStartPoint = coord;
+        areaLabel.innerText = 'Cover — Paste & parse';
+        show('input');
+      }).catch(()=> alert('Address not recognized. Try GPS or a nearby town name like "Streatham"'));
+    });
+
+    // simple local geocoder for towns / fallback
+    function geocodeAddress(addr){
+      const a = addr.toLowerCase();
+      if(a.includes('woking')) return Promise.resolve({lat:51.3190, lon:-0.5584});
+      if(a.includes('streatham')) return Promise.resolve({lat:51.431, lon:-0.128});
+      if(a.includes('wimbledon')) return Promise.resolve({lat:51.4210, lon:-0.2083});
+      if(a.includes('epsom')) return Promise.resolve({lat:51.334, lon:-0.270});
+      if(a.includes('mitcham')) return Promise.resolve({lat:51.401, lon:-0.169});
+      if(a.includes('merton')) return Promise.resolve({lat:51.409, lon:-0.177});
+      if(a.includes('tooting')) return Promise.resolve({lat:51.428, lon:-0.164});
+      if(a.includes('balham')) return Promise.resolve({lat:51.442, lon:-0.152});
+      if(a.includes('putney')) return Promise.resolve({lat:51.463, lon:-0.216});
+      if(a.includes('wandsworth')) return Promise.resolve({lat:51.459, lon:-0.191});
+      if(a.includes('chelsea')) return Promise.resolve({lat:51.492, lon:-0.160});
+      if(a.includes('notting hill')) return Promise.resolve({lat:51.512, lon:-0.206});
+      if(a.includes('marylebone')) return Promise.resolve({lat:51.519, lon:-0.138});
+      return Promise.reject();
+    }
+
+    // parse button
+    parseBtn.addEventListener('click', ()=>{
       const txt = rawInput.value || '';
       const codes = parseText(txt);
       buildList(codes);
@@ -254,9 +496,9 @@
       save();
     });
 
-    clearBtn.addEventListener('click',()=>{rawInput.value='';});
+    clearBtn.addEventListener('click', ()=> rawInput.value='');
 
-    document.getElementById('add-btn').addEventListener('click',()=>{
+    document.getElementById('add-btn').addEventListener('click', ()=>{
       const v = document.getElementById('add-code').value.trim();
       if(!v) return;
       addManual(v);
@@ -264,37 +506,39 @@
       save();
     });
 
-    document.getElementById('endtrip').addEventListener('click',()=>{
-      const unfinished = state.parsed.filter(p=>!p.done).map(p=>p.code);
-      if(unfinished.length===0){
-        if(confirm('All clinics completed. End trip?')){
-          localStorage.removeItem(STORAGE_KEY);
-          state={area:null,parsed:[]};
-          show('choose');
-        }
-      } else {
-        if(confirm('Unfinished: ' + unfinished.join(', ') + '\nEnd anyway?')){
-          localStorage.removeItem(STORAGE_KEY);
-          state={area:null,parsed:[]};
-          show('choose');
-        }
-      }
-    });
-
-    function show(which){
-      chooseScreen.style.display = which==='choose'?'block':'none';
-      inputScreen.style.display = which==='input'?'block':'none';
-      listScreen.style.display = which==='list'?'block':'none';
-      if(which==='list') renderList();
-    }
-
-    /*************** BUILD CHECKLIST ***************/
+    /* -------------------------
+       Build list (handles Cover special)
+       ------------------------- */
     function buildList(codes){
+      // if Cover -> optimized route
+      if(state.area === 'Cover'){
+        // optimize and map to state.parsed items
+        const seq = optimizeCoverRoute(codes); // returns array of {code,name,address,info}
+        // Convert to internal format
+        state.parsed = seq.map(s=>({
+          code: s.code,
+          name: s.name || s.code,
+          address: s.address || '',
+          info: INSTRUCTIONS[s.code] || '',
+          selected: null,
+          quantity: null,
+          icebox: false,
+          done: false,
+          added: false
+        }));
+        // ensure final drop present (optimizeCoverRoute already appended it)
+        if(state.parsed[state.parsed.length-1].code !== 'DROP') state.parsed.push({...FINAL, selected:null,quantity:null,icebox:false,done:false});
+        save();
+        return;
+      }
+
+      // Non-Cover: use selected master list for ordering
+      const MASTER = getMasterList();
       const masterIndex = {};
-      MASTER.forEach((m,i)=>masterIndex[m.code]=i);
+      MASTER.forEach((m,i)=> masterIndex[m.code]=i);
 
       const objs = codes.map(code=>{
-        const found = MASTER.find(m=>m.code===code);
+        const found = MASTER.find(m=>m.code===code) || MASTER_MERTON.find(m=>m.code===code) || MASTER_SURREY.find(m=>m.code===code);
         return {
           code,
           name: found?found.name:code,
@@ -302,24 +546,21 @@
           info: INSTRUCTIONS[code]||'',
           selected:null,
           quantity:null,
+          icebox:false,
           done:false,
           added:false
         };
       });
 
-      const known = objs.filter(o=>masterIndex[o.code]!==undefined)
-                        .sort((a,b)=>masterIndex[a.code]-masterIndex[b.code]);
-
-      const unknown = objs.filter(o=>masterIndex[o.code]===undefined)
-                          .sort((a,b)=>a.code.localeCompare(b.code));
-
-      state.parsed = [...known,...unknown,{...FINAL,selected:null,quantity:null,done:false}];
+      const known = objs.filter(o=>masterIndex[o.code]!==undefined).sort((a,b)=>masterIndex[a.code]-masterIndex[b.code]);
+      const unknown = objs.filter(o=>masterIndex[o.code]===undefined).sort((a,b)=>a.code.localeCompare(b.code));
+      state.parsed = [...known,...unknown,{...FINAL,selected:null,quantity:null,icebox:false,done:false}];
       save();
     }
 
     function addManual(input){
       const code = input.toUpperCase().replace(/[^A-Z0-9]/g,'');
-      const found = MASTER.find(m=>m.code===code);
+      const found = MASTER_MERTON.find(m=>m.code===code) || MASTER_SURREY.find(m=>m.code===code);
       const obj = {
         code: code || input,
         name: found?found.name:input,
@@ -327,92 +568,75 @@
         info: INSTRUCTIONS[code]||'',
         selected:null,
         quantity:null,
+        icebox:false,
         done:false,
         added:true
       };
-
       const withoutFinal = state.parsed.filter(p=>p.code!=='DROP');
+      const final = state.parsed.find(p=>p.code==='DROP') || {...FINAL, selected:null,quantity:null,icebox:false,done:false};
       withoutFinal.push(obj);
-      const final = state.parsed.find(p=>p.code==='DROP');
       state.parsed = [...withoutFinal, final];
       renderList();
     }
 
-    /*************** RENDER CHECKLIST ***************/
+    /* -------------------------
+       RENDER LIST + CONTROLS
+       ------------------------- */
     function renderList(){
-      checklist.innerHTML='';
-      state.parsed.forEach((item)=>{
-        const card = document.createElement('div');
-        card.className='card';
-
-        const top = document.createElement('div');
-        top.className='top';
-
+      checklist.innerHTML = '';
+      state.parsed.forEach((item, idx)=>{
+        const card = document.createElement('div'); card.className='card';
+        const top = document.createElement('div'); top.className='top';
         const title = document.createElement('div');
-        title.innerHTML = `
-          <div class="clinic-title">${escapeHtml(item.name)}</div>
-          <div class="clinic-code">${item.code}</div>
-        `;
+        title.innerHTML = `<div class="clinic-title">${escapeHtml(item.name)}</div><div class="clinic-code">${item.code}</div>`;
         top.appendChild(title);
-
         const right = document.createElement('div');
 
-        const goBtn = document.createElement('button');
-        goBtn.className='chip small';
-        goBtn.innerText='GO';
-        goBtn.addEventListener('click',()=>openMaps(item));
-        right.appendChild(goBtn);
+        const goBtn = document.createElement('button'); goBtn.className='chip small'; goBtn.innerText='GO';
+        goBtn.addEventListener('click', ()=> openMaps(item)); right.appendChild(goBtn);
 
-        const infoBtn = document.createElement('button');
-        infoBtn.className='chip small';
-        infoBtn.innerText='INFO';
-        infoBtn.addEventListener('click',()=>{
-          alert(item.info || (item.name + '\n\nNo additional instructions.'));
-        });
-        right.appendChild(infoBtn);
+        const infoBtn = document.createElement('button'); infoBtn.className='chip small'; infoBtn.innerText='INFO';
+        infoBtn.addEventListener('click', ()=> alert(item.info || (item.name + '\n\nNo additional instructions.'))); right.appendChild(infoBtn);
 
-        top.appendChild(right);
-        card.appendChild(top);
+        top.appendChild(right); card.appendChild(top);
 
-        const controls = document.createElement('div');
-        controls.className='controls';
+        const controls = document.createElement('div'); controls.className='controls';
 
-        if(item.code==='DROP'){
+        if(item.code === 'DROP'){
           const doneBtn = document.createElement('button');
-          doneBtn.className = item.done?'undo':'done';
-          doneBtn.innerText = item.done?'Undo':'Done';
-          doneBtn.addEventListener('click',()=>{
-            item.done=!item.done;
-            save();renderList();
-          });
+          doneBtn.className = item.done ? 'undo' : 'done';
+          doneBtn.innerText = item.done ? 'Undo' : 'Done';
+          doneBtn.addEventListener('click', ()=> { item.done = !item.done; save(); renderList(); });
           controls.appendChild(doneBtn);
         } else {
           const ax = buttonChip('AXIOM','blue',item);
           const fi = buttonChip('FINN','green',item);
           const nt = buttonChip('NTC','grey',item);
-          controls.appendChild(ax);
-          controls.appendChild(fi);
-          controls.appendChild(nt);
+          controls.appendChild(ax); controls.appendChild(fi); controls.appendChild(nt);
 
-          const qtyWrap = document.createElement('div');
-          qtyWrap.className='qtys';
+          const qtyWrap = document.createElement('div'); qtyWrap.className='qtys';
           for(let i=1;i<=10;i++){
-            qtyWrap.appendChild(qtyButton(i,item));
+            const q = document.createElement('div'); q.className='qty'; q.innerText = i;
+            if(item.quantity === i) q.classList.add('selected');
+            q.addEventListener('click', ()=> { item.quantity = (item.quantity === i ? null : i); save(); renderList(); });
+            qtyWrap.appendChild(q);
           }
-          qtyWrap.appendChild(qtyButton('Ice Box',item));
+          const ice = document.createElement('div'); ice.className='qty'; ice.innerText='Ice Box';
+          if(item.icebox) ice.classList.add('selected');
+          ice.addEventListener('click', ()=> { item.icebox = !item.icebox; save(); renderList(); });
+          qtyWrap.appendChild(ice);
           controls.appendChild(qtyWrap);
 
           const doneBtn = document.createElement('button');
-          doneBtn.disabled = !(item.selected && (item.selected==='NTC' || item.quantity));
-          doneBtn.className=item.done?'undo':'done';
-          doneBtn.innerText=item.done?'Undo':'Done';
-          doneBtn.addEventListener('click',()=>{
+          doneBtn.disabled = !(item.selected && (item.selected === 'NTC' || item.quantity !== null || item.icebox === true));
+          doneBtn.className = item.done ? 'undo' : 'done';
+          doneBtn.innerText = item.done ? 'Undo' : 'Done';
+          doneBtn.addEventListener('click', ()=>{
             if(!item.done){
-              if(!item.selected){alert('Select AXIOM, FINN or NTC');return;}
-              if(item.selected!=='NTC' && !item.quantity){alert('Select quantity');return;}
+              if(!item.selected){ alert('Select AXIOM, FINN or NTC'); return; }
+              if(item.selected !== 'NTC' && item.quantity === null && !item.icebox){ alert('Select quantity or Ice Box (or choose NTC)'); return; }
             }
-            item.done=!item.done;
-            save();renderList();
+            item.done = !item.done; save(); renderList();
           });
           controls.appendChild(doneBtn);
         }
@@ -420,67 +644,73 @@
         card.appendChild(controls);
         checklist.appendChild(card);
       });
-
       updateProgress();
     }
 
     function buttonChip(label,color,item){
       const b = document.createElement('button');
-      b.className='chip ' + color;
-      b.innerText=label;
-      if(item.selected===label) b.style.outline='3px solid rgba(0,0,0,0.15)';
-      b.addEventListener('click',()=>{
-        item.selected=label;
-        if(label==='NTC') item.quantity=null;
-        save();renderList();
-      });
+      b.className = 'chip ' + color;
+      b.innerText = label;
+      if(item.selected === label) b.style.outline = '3px solid rgba(0,0,0,0.15)';
+      b.addEventListener('click', ()=> { item.selected = label; if(label === 'NTC') { item.quantity = null; item.icebox = false; } save(); renderList(); });
       return b;
-    }
-
-    function qtyButton(val,item){
-      const q = document.createElement('div');
-      q.className='qty';
-      q.innerText=val;
-      if(item.quantity===val) q.classList.add('selected');
-      q.addEventListener('click',()=>{
-        item.quantity=val;
-        save();renderList();
-      });
-      return q;
     }
 
     function updateProgress(){
       const total = state.parsed.length;
       const done = state.parsed.filter(p=>p.done).length;
-      const pct = total?Math.round(done/total*100):0;
+      const pct = total ? Math.round((done/total)*100) : 0;
       progressBar.style.width = pct + '%';
       progressText.innerText = pct + '%';
-      runInfo.innerText = (state.area||'Run') + ' — ' + done + '/' + total;
+      runInfo.innerText = (state.area || 'Run') + ' — ' + done + '/' + total;
+
+      // remove earlier dynamic end trip button if any
+      const oldBtn = document.getElementById('endtrip');
+      if(oldBtn) oldBtn.remove();
+
+      // show End Trip ONLY when all are done
+      if(done === total && total > 0){
+        const footer = document.querySelector('footer');
+        const btn = document.createElement('button'); btn.id = 'endtrip'; btn.className = 'endtrip'; btn.innerText = 'End Trip';
+        btn.addEventListener('click', ()=>{
+          if(confirm('End trip and clear all data?')){
+            localStorage.removeItem(STORAGE_KEY);
+            state = {area:null, parsed:[]};
+            coverStartPoint = null;
+            show('choose');
+          }
+        });
+        footer.appendChild(btn);
+      }
     }
 
     function openMaps(item){
       const q = encodeURIComponent(item.address || item.name);
-      window.open('https://www.google.com/maps/search/?api=1&query=' + q,'_blank');
+      window.open('https://www.google.com/maps/search/?api=1&query=' + q, '_blank');
     }
 
-    function escapeHtml(s){
-      return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
+    function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    /*************** INITIAL LOAD ***************/
+    /* -------------------------
+       INITIALISE / LOAD
+       ------------------------- */
     load();
-    if(state.parsed.length>0) show('list');
+    if(state.parsed.length > 0) show('list');
     else if(state.area){ areaLabel.innerText = state.area + ' — Paste & parse'; show('input'); }
     else show('choose');
-  </script>
 
-  <!-- SERVICE WORKER REGISTRATION (correct place) -->
-  <script>
+    function show(which){
+      chooseScreen.style.display = which==='choose' ? 'block' : 'none';
+      coverStartScreen.style.display = which==='cover-start' ? 'block' : 'none';
+      inputScreen.style.display = which==='input' ? 'block' : 'none';
+      listScreen.style.display = which==='list' ? 'block' : 'none';
+      if(which === 'list') renderList();
+    }
+
+    // register service worker (if present)
     if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('service-worker.js');
+      try{ navigator.serviceWorker.register('service-worker.js'); } catch(e) { console.warn('SW reg failed', e); }
     }
   </script>
-
 </body>
 </html>
-
