@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Clinic Run — Select Area</title>
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json">
+
   <style>
     :root{--bg:#f2f5f9;--card:#ffffff;--muted:#6b7280;--blue:#0b69ff;--green:#10b981;--grey:#9ca3af}
     html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
@@ -22,7 +26,6 @@
     .primary{background:var(--blue);color:white;padding:12px;border-radius:10px;border:0;flex:1}
     .secondary{background:white;border:1px solid #e5e7eb;padding:12px;border-radius:10px;color:var(--muted)}
 
-    /* checklist */
     .list{margin-top:14px}
     .card{background:var(--card);padding:12px;border-radius:12px;margin-bottom:10px;display:flex;flex-direction:column;box-shadow:0 4px 10px rgba(2,6,23,0.04)}
     .card .top{display:flex;justify-content:space-between;align-items:center}
@@ -53,8 +56,10 @@
     @media(min-width:520px){body{background:#fff} .screen{box-shadow:0 6px 20px rgba(2,6,23,0.06);border-radius:14px;margin-top:20px}}
   </style>
 </head>
+
 <body>
   <div class="screen" id="app">
+    <!-- CHOOSE AREA -->
     <div id="choose-screen" class="big-card">
       <h1>Select area to start</h1>
       <div class="choices">
@@ -65,6 +70,7 @@
       <p style="margin-top:12px;color:var(--muted)">Choose one to continue — this only sets a label for the run.</p>
     </div>
 
+    <!-- INPUT SCREEN -->
     <div id="input-screen" class="big-card" style="display:none">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <h1 id="area-label">Run</h1>
@@ -79,6 +85,7 @@
       </div>
     </div>
 
+    <!-- LIST SCREEN -->
     <div id="list-screen" style="display:none">
       <div class="big-card">
         <div style="display:flex;justify-content:space-between;align-items:center">
@@ -87,7 +94,7 @@
         </div>
 
         <div class="add-top">
-          <input id="add-code" placeholder="Add clinic code (e.g. WL3A) or name" />
+          <input id="add-code" placeholder="Add clinic code or name" />
           <button id="add-btn" class="chip">Add</button>
         </div>
 
@@ -97,7 +104,6 @@
         </div>
 
         <div class="list" id="checklist"></div>
-
       </div>
 
       <footer>
@@ -111,9 +117,9 @@
     </div>
   </div>
 
+  <!-- MAIN APP SCRIPT -->
   <script>
-    // ********** CONFIG: MASTER SEQUENCE & DATA **********
-    // IMPORTANT: Replace addresses and INSTRUCTIONS below with your real data.
+    /*************** MASTER DATA (same as your version) *****************/
     const MASTER = [
       {code:'Z2K',name:'Blue Cross Vets Merton', address:'88–92 Merton High St, Merton, SW19 1BD'},
       {code:'7FO17',name:'Wimbledon Veterinary Surgery', address:'170–172 Merton Road, Wimbledon, SW19 1EG'},
@@ -155,43 +161,69 @@
       {code:'IS1M',name:'Islander Vets', address:'129 Manor Drive North, New Malden, KT3 5PD'},
     ];
 
-    // Final drop-off always appended
     const FINAL = {code:'DROP',name:'Orchard Business Park, Forsyth Rd, Woking GU21 5SB',address:'Orchard Business Park, Forsyth Rd, Woking GU21 5SB'};
 
-    // INSTRUCTIONS placeholder. Replace the values below with the exact texts you have (CFU, CPU, TO5L, VBO, CCN, CCS, VVM, SC3E)
     const INSTRUCTIONS = {
-      CFU: 'Unlock door with square headed key. Remove key. Unlock door magnet with pin code 0725. Disarm alarm with code 0725 and tick. Pick up package from reception desk. If no package, take a photograph. Arm alarm 0725 and tick. Press magnet release to open door. Lock door with key.',
-      CPU: 'Box is at the back on a side road (Deodar Road), alleyway all the way at the end of alley.',
-      TO5L: 'Open key safe with code 7821. Open door with key from safe. Sample box behind the door. Lock door with key from safe. Put key back into safe and change code.',
-      VBO: 'Open gate with padlock key. Walk all the way to the back. Box is on the left side. Lock gate with padlock key.',
-      CCN: 'Open door with large key. Enter code 1216 to unlock magnet. Enter code 2513 to disarm alarm. Take sample. Arm alarm 2513. Lock door with large key.',
-      CCS: 'Entrance is by side road with gate. Code to enter gate: 9876. Sample is by tiny alleyway after few doors on the right. Code to exit gate: 9876.',
-      VVM: 'Padlock to go down 02024. Padlock sometimes gets stuck; pull harder to unlock.',
-      SC3E: 'Front garden of house at 49 Heythorp Street SW18 5BS. Sample is inside front garden shed. Padlock code 1910. Lock shed when finished.',
-      OR1M: 'Box is located on the side of the car park where the recycling trolleys are. Drive straight when you turn into the road. Code to open the box: 936.'
+      CFU: 'Unlock door with square headed key...',
+      CPU: 'Box is at the back...',
+      TO5L: 'Open key safe...',
+      VBO: 'Open gate with padlock...',
+      CCN: 'Open door with large key...',
+      CCS: 'Entrance is by side road...',
+      VVM: 'Padlock 02024...',
+      SC3E: 'Front garden shed...',
+      OR1M: 'Box on side of car park, code 936.'
     };
 
-    // *********************** APP STATE & STORAGE ************************
+    /*************** STATE + STORAGE ***************/
     const STORAGE_KEY = 'clinicRun_v1';
-    let state = {
-      area: null,
-      parsed: [], // {code,name,address,info,selected,quantity,done,added}
-    };
+    let state = {area:null, parsed:[]};
 
-    // Load saved state
     function load(){
       const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){
-        try{state = JSON.parse(raw)}catch(e){console.warn('load err',e)}
-      }
+      if(raw){ try{state=JSON.parse(raw)}catch(e){} }
     }
+
     function save(){
       state.savedAt = new Date().toISOString();
       localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
-      document.getElementById('saved-ind').innerText = new Date(state.savedAt).toLocaleTimeString();
+      document.getElementById('saved-ind').innerText =
+        new Date(state.savedAt).toLocaleTimeString();
     }
 
-    // UI refs
+    /*************** FIXED PARSER FUNCTION ***************/
+    function parseText(text){
+      // Remove TOTAL lines entirely
+      const noTotals = text.replace(/TOTAL\s+\d+/ig, '');
+
+      // Split into safe tokens
+      const tokens = noTotals
+        .split(/[^A-Za-z0-9]+/)
+        .map(t => t.trim().toUpperCase())
+        .filter(Boolean);
+
+      // Remove days
+      const days = ['MON','TUE','WED','THU','FRI','SAT','SUN','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
+      let filtered = tokens.filter(t => !days.includes(t));
+
+      // Remove route/date numbers (only if ALL digits)
+      filtered = filtered.filter(t => !/^\d+$/.test(t));
+
+      // Valid codes = alphanumeric 2–6 length
+      const candidate = filtered.filter(t => /^[A-Z0-9]{2,6}$/.test(t));
+
+      // Dedupe
+      const seen = new Set();
+      const uniq = candidate.filter(c=>{
+        if(seen.has(c)) return false;
+        seen.add(c);
+        return true;
+      });
+
+      return uniq;
+    }
+
+    /*************** UI ELEMENTS ***************/
     const chooseScreen = document.getElementById('choose-screen');
     const inputScreen = document.getElementById('input-screen');
     const listScreen = document.getElementById('list-screen');
@@ -204,18 +236,16 @@
     const areaLabel = document.getElementById('area-label');
     const runInfo = document.getElementById('run-info');
 
-    document.getElementById('back-to-choose').addEventListener('click',()=>{show('choose')});
+    document.getElementById('back-to-choose').addEventListener('click',()=>show('choose'));
 
-    // Choose area
+    /*************** SCREEN FLOW ***************/
     document.querySelectorAll('.btn-choose').forEach(b=>b.addEventListener('click',e=>{
-      const a = e.target.dataset.area;
-      state.area = a;
-      areaLabel.innerText = a + ' — Paste & parse';
+      state.area = e.target.dataset.area;
+      areaLabel.innerText = state.area + ' — Paste & parse';
       show('input');
       save();
     }));
 
-    // Parse logic
     parseBtn.addEventListener('click',()=>{
       const txt = rawInput.value || '';
       const codes = parseText(txt);
@@ -223,9 +253,9 @@
       show('list');
       save();
     });
+
     clearBtn.addEventListener('click',()=>{rawInput.value='';});
 
-    // Add manual code
     document.getElementById('add-btn').addEventListener('click',()=>{
       const v = document.getElementById('add-code').value.trim();
       if(!v) return;
@@ -234,23 +264,23 @@
       save();
     });
 
-    // End trip
     document.getElementById('endtrip').addEventListener('click',()=>{
       const unfinished = state.parsed.filter(p=>!p.done).map(p=>p.code);
       if(unfinished.length===0){
-        // clear and go back
-        if(confirm('All clinics completed. End trip and clear data?')){
+        if(confirm('All clinics completed. End trip?')){
           localStorage.removeItem(STORAGE_KEY);
           state={area:null,parsed:[]};
           show('choose');
         }
       } else {
-        const res = confirm('You still have unfinished clinics: ' + unfinished.join(', ') + '.\n\nEnd anyway?');
-        if(res){localStorage.removeItem(STORAGE_KEY);state={area:null,parsed:[]};show('choose');}
+        if(confirm('Unfinished: ' + unfinished.join(', ') + '\nEnd anyway?')){
+          localStorage.removeItem(STORAGE_KEY);
+          state={area:null,parsed:[]};
+          show('choose');
+        }
       }
     });
 
-    // Show screens
     function show(which){
       chooseScreen.style.display = which==='choose'?'block':'none';
       inputScreen.style.display = which==='input'?'block':'none';
@@ -258,133 +288,131 @@
       if(which==='list') renderList();
     }
 
-    // Parsing rules
-    function parseText(text){
-      // Remove lines containing TOTAL or total
-      const lines = text.split(/\n+/).map(l=>l.trim()).filter(Boolean).filter(l=>!/\bTOTAL\b|\bTotal\b|\btotal\b/.test(l));
-      const tokens = lines.join(' ').split(/[\s,;:\-]+/);
-      const cleaned = tokens.map(t=>t.replace(/[^A-Za-z0-9]/g,'').toUpperCase()).filter(Boolean);
-
-      // Remove days and pure numbers and route numbers (digits)
-      const days = ['MON','TUE','WED','THU','FRI','SAT','SUN','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
-      const filtered = cleaned.filter(t=>!(days.includes(t) || /^\d+$/.test(t)));
-
-      // Keep only tokens that look like codes (2-6 chars alnum) or tokens matching known names
-      const candidate = filtered.filter(t=>/^[A-Z0-9]{2,6}$/.test(t));
-
-      // Deduplicate keeping order
-      const seen = new Set();
-      const uniq = candidate.filter(c=>{if(seen.has(c)) return false;seen.add(c);return true;});
-      return uniq;
-    }
-
-    // Build parsed list into state with ordering
+    /*************** BUILD CHECKLIST ***************/
     function buildList(codes){
       const masterIndex = {};
       MASTER.forEach((m,i)=>masterIndex[m.code]=i);
 
-      // Map to objects with any known name/address
       const objs = codes.map(code=>{
         const found = MASTER.find(m=>m.code===code);
-        return {code, name: found?found.name:code, address: found?found.address:'', info: INSTRUCTIONS[code]||'', selected:null, quantity:null, done:false, added:false};
+        return {
+          code,
+          name: found?found.name:code,
+          address: found?found.address:'',
+          info: INSTRUCTIONS[code]||'',
+          selected:null,
+          quantity:null,
+          done:false,
+          added:false
+        };
       });
 
-      // Split into known and unknown
-      const known = objs.filter(o=>masterIndex[o.code]!==undefined).sort((a,b)=>masterIndex[a.code]-masterIndex[b.code]);
-      const unknown = objs.filter(o=>masterIndex[o.code]===undefined).sort((a,b)=>a.code.localeCompare(b.code));
+      const known = objs.filter(o=>masterIndex[o.code]!==undefined)
+                        .sort((a,b)=>masterIndex[a.code]-masterIndex[b.code]);
 
-      state.parsed = [...known,...unknown, {...FINAL, info:'', selected:null, quantity:null, done:false, added:false}];
-      state.area = state.area || 'Run';
-      renderList();
+      const unknown = objs.filter(o=>masterIndex[o.code]===undefined)
+                          .sort((a,b)=>a.code.localeCompare(b.code));
+
+      state.parsed = [...known,...unknown,{...FINAL,selected:null,quantity:null,done:false}];
+      save();
     }
 
-    // Add manual clinic
     function addManual(input){
       const code = input.toUpperCase().replace(/[^A-Z0-9]/g,'');
       const found = MASTER.find(m=>m.code===code);
-      const obj = {code:code||input,name:found?found.name:input,address:found?found.address:'',info:INSTRUCTIONS[code]||'',selected:null,quantity:null,done:false,added:true};
-      // Add before final dropoff
+      const obj = {
+        code: code || input,
+        name: found?found.name:input,
+        address: found?found.address:'',
+        info: INSTRUCTIONS[code]||'',
+        selected:null,
+        quantity:null,
+        done:false,
+        added:true
+      };
+
       const withoutFinal = state.parsed.filter(p=>p.code!=='DROP');
       withoutFinal.push(obj);
-      state.parsed = [...withoutFinal, state.parsed.find(p=>p.code==='DROP')];
+      const final = state.parsed.find(p=>p.code==='DROP');
+      state.parsed = [...withoutFinal, final];
       renderList();
     }
 
-    // Render list
+    /*************** RENDER CHECKLIST ***************/
     function renderList(){
       checklist.innerHTML='';
-      state.parsed.forEach((item,idx)=>{
-        const card = document.createElement('div');card.className='card';
-        const top = document.createElement('div');top.className='top';
+      state.parsed.forEach((item)=>{
+        const card = document.createElement('div');
+        card.className='card';
+
+        const top = document.createElement('div');
+        top.className='top';
+
         const title = document.createElement('div');
-        title.innerHTML = '<div class="clinic-title">'+escapeHtml(item.name)+'</div><div class="clinic-code">'+item.code+'</div>';
+        title.innerHTML = `
+          <div class="clinic-title">${escapeHtml(item.name)}</div>
+          <div class="clinic-code">${item.code}</div>
+        `;
         top.appendChild(title);
+
         const right = document.createElement('div');
-        // GO button - open maps search
-        const goBtn = document.createElement('button');goBtn.className='chip small';goBtn.innerText='GO';
-        goBtn.addEventListener('click',()=>{openMaps(item);});
+
+        const goBtn = document.createElement('button');
+        goBtn.className='chip small';
+        goBtn.innerText='GO';
+        goBtn.addEventListener('click',()=>openMaps(item));
         right.appendChild(goBtn);
-        // INFO button
-        const infoBtn = document.createElement('button');infoBtn.className='chip small';infoBtn.innerText='INFO';
-        infoBtn.addEventListener('click',()=>{alert((item.info && item.info.length>0)?item.info:(item.name+'\n\nNo additional instructions provided.'))});
+
+        const infoBtn = document.createElement('button');
+        infoBtn.className='chip small';
+        infoBtn.innerText='INFO';
+        infoBtn.addEventListener('click',()=>{
+          alert(item.info || (item.name + '\n\nNo additional instructions.'));
+        });
         right.appendChild(infoBtn);
+
         top.appendChild(right);
         card.appendChild(top);
 
-        // Controls - if final dropoff, only show Done button
-        const controls = document.createElement('div');controls.className='controls';
+        const controls = document.createElement('div');
+        controls.className='controls';
+
         if(item.code==='DROP'){
           const doneBtn = document.createElement('button');
-          doneBtn.className=item.done?'undo':'done';
-          doneBtn.innerText=item.done?'Undo':'Done';
-          doneBtn.addEventListener('click',()=>{item.done=!item.done;save();renderList();});
+          doneBtn.className = item.done?'undo':'done';
+          doneBtn.innerText = item.done?'Undo':'Done';
+          doneBtn.addEventListener('click',()=>{
+            item.done=!item.done;
+            save();renderList();
+          });
           controls.appendChild(doneBtn);
         } else {
-          // AXIOM/FINN/NTC
-          const ax = document.createElement('button');ax.className='chip blue';ax.innerText='AXIOM';
-          const fi = document.createElement('button');fi.className='chip green';fi.innerText='FINN';
-          const nt = document.createElement('button');nt.className='chip grey';nt.innerText='NTC';
-          [ax,fi,nt].forEach(b=>{
-            b.addEventListener('click',()=>{
-              item.selected = b.innerText;
-              if(item.selected==='NTC') item.quantity=null; // skip quantity
-              save();renderList();
-            });
-          });
-          // Highlight selected
-          if(item.selected==='AXIOM') ax.style.outline='3px solid rgba(11,105,255,0.15)';
-          if(item.selected==='FINN') fi.style.outline='3px solid rgba(16,185,129,0.12)';
-          if(item.selected==='NTC') nt.style.outline='3px solid rgba(156,163,175,0.12)';
-          controls.appendChild(ax);controls.appendChild(fi);controls.appendChild(nt);
+          const ax = buttonChip('AXIOM','blue',item);
+          const fi = buttonChip('FINN','green',item);
+          const nt = buttonChip('NTC','grey',item);
+          controls.appendChild(ax);
+          controls.appendChild(fi);
+          controls.appendChild(nt);
 
-          // Quantity selector
-          const qtyWrap = document.createElement('div');qtyWrap.className='qtys';
+          const qtyWrap = document.createElement('div');
+          qtyWrap.className='qtys';
           for(let i=1;i<=10;i++){
-            const q = document.createElement('div');q.className='qty';q.innerText=i;
-            if(item.quantity===i) q.classList.add('selected');
-            q.addEventListener('click',()=>{item.quantity=i;save();renderList();});
-            qtyWrap.appendChild(q);
+            qtyWrap.appendChild(qtyButton(i,item));
           }
-          const ice = document.createElement('div');ice.className='qty';ice.innerText='Ice Box';
-          if(item.quantity==='Ice Box') ice.classList.add('selected');
-          ice.addEventListener('click',()=>{item.quantity='Ice Box';save();renderList();});
-          qtyWrap.appendChild(ice);
-
+          qtyWrap.appendChild(qtyButton('Ice Box',item));
           controls.appendChild(qtyWrap);
 
-          // Done/Undo
           const doneBtn = document.createElement('button');
-          // Button validity: NTC may be done without quantity; AXIOM/FINN need quantity selected
           doneBtn.disabled = !(item.selected && (item.selected==='NTC' || item.quantity));
           doneBtn.className=item.done?'undo':'done';
           doneBtn.innerText=item.done?'Undo':'Done';
           doneBtn.addEventListener('click',()=>{
             if(!item.done){
-              // Validate
-              if(!item.selected){alert('Please select AXIOM, FINN or NTC');return}
-              if(item.selected!=='NTC' && !item.quantity){alert('Please select quantity before marking Done');return}
+              if(!item.selected){alert('Select AXIOM, FINN or NTC');return;}
+              if(item.selected!=='NTC' && !item.quantity){alert('Select quantity');return;}
             }
-            item.done=!item.done;save();renderList();
+            item.done=!item.done;
+            save();renderList();
           });
           controls.appendChild(doneBtn);
         }
@@ -392,42 +420,67 @@
         card.appendChild(controls);
         checklist.appendChild(card);
       });
+
       updateProgress();
+    }
+
+    function buttonChip(label,color,item){
+      const b = document.createElement('button');
+      b.className='chip ' + color;
+      b.innerText=label;
+      if(item.selected===label) b.style.outline='3px solid rgba(0,0,0,0.15)';
+      b.addEventListener('click',()=>{
+        item.selected=label;
+        if(label==='NTC') item.quantity=null;
+        save();renderList();
+      });
+      return b;
+    }
+
+    function qtyButton(val,item){
+      const q = document.createElement('div');
+      q.className='qty';
+      q.innerText=val;
+      if(item.quantity===val) q.classList.add('selected');
+      q.addEventListener('click',()=>{
+        item.quantity=val;
+        save();renderList();
+      });
+      return q;
     }
 
     function updateProgress(){
       const total = state.parsed.length;
       const done = state.parsed.filter(p=>p.done).length;
-      const pct = total?Math.round((done/total)*100):0;
+      const pct = total?Math.round(done/total*100):0;
       progressBar.style.width = pct + '%';
       progressText.innerText = pct + '%';
       runInfo.innerText = (state.area||'Run') + ' — ' + done + '/' + total;
     }
 
     function openMaps(item){
-      // Uses Google Maps search query — this will open in browser and may hand off to Maps app on mobile
-      const q = encodeURIComponent((item.address && item.address.length>0)? item.address : item.name + ' ' + item.address);
-      const url = 'https://www.google.com/maps/search/?api=1&query=' + q;
-      window.open(url, '_blank');
+      const q = encodeURIComponent(item.address || item.name);
+      window.open('https://www.google.com/maps/search/?api=1&query=' + q,'_blank');
     }
 
-    // Helpers
-    function escapeHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    function escapeHtml(s){
+      return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
 
-    // On load, try to restore
+    /*************** INITIAL LOAD ***************/
     load();
-    if(state.parsed && state.parsed.length>0){
-      // keep showing list
-      show('list');
-    } else if(state.area){
-      areaLabel.innerText = state.area + ' — Paste & parse';
-      show('input');
-    } else {
-      show('choose');
-    }
-
-    // Inform user where to replace instructions/addresses
-    console.log('Clinic app loaded. To set precise addresses and INFO texts, edit the MASTER and INSTRUCTIONS objects in the top of the HTML file.');
+    if(state.parsed.length>0) show('list');
+    else if(state.area){ areaLabel.innerText = state.area + ' — Paste & parse'; show('input'); }
+    else show('choose');
   </script>
+
+  <!-- SERVICE WORKER REGISTRATION (correct place) -->
+  <script>
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+
 </body>
 </html>
+
