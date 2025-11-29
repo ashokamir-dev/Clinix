@@ -45,12 +45,23 @@
     .add-top{display:flex;gap:8px;margin-bottom:8px}
     .add-top input{flex:1;padding:10px;border-radius:8px;border:1px solid #e6e7eb}
     .link{font-size:13px;color:var(--blue);text-decoration:underline;cursor:pointer}
+    #login-screen{max-width:480px;margin:20px auto}
     @media(min-width:520px){body{background:#fff} .screen{box-shadow:0 6px 20px rgba(2,6,23,0.06);border-radius:14px;margin-top:20px}}
   </style>
 </head>
 
 <body>
-  <div class="screen" id="app">
+  <!-- LOGIN SCREEN (shown before the app if not logged in) -->
+  <div id="login-screen" class="big-card" style="display:none;max-width:480px;margin:20px auto">
+    <h1>Clinix Login</h1>
+    <input id="login-username" placeholder="Username" style="width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1px solid #ccc"/>
+    <input id="login-password" placeholder="Password" type="password" style="width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1px solid #ccc"/>
+    <button id="login-btn" class="primary" style="margin-top:15px;width:100%">Login</button>
+    <div id="login-error" style="color:red;margin-top:10px;display:none">Invalid username or password</div>
+  </div>
+
+  <!-- MAIN APP (hidden until login) -->
+  <div class="screen" id="app" style="display:none">
 
     <!-- CHOOSE -->
     <div id="choose-screen" class="big-card">
@@ -98,6 +109,11 @@
           <div style="font-size:13px;color:var(--muted)" id="run-info">Area</div>
         </div>
 
+        <!-- Logout -->
+        <div style="text-align:right;margin-bottom:10px">
+          <span id="logout-btn" style="font-size:13px;color:#dc2626;cursor:pointer">Logout</span>
+        </div>
+
         <div class="add-top">
           <input id="add-code" placeholder="Add clinic code or name" />
           <button id="add-btn" class="chip">Add</button>
@@ -122,10 +138,24 @@
   </div>
 
   <script>
-    /* -------------------------
-       MASTER LISTS (Merton + Surrey)
-       ------------------------- */
+    // ===============================
+    // SIMPLE USER AUTH (hardcoded)
+    // ===============================
+    const USERS = {
+      "ashok":   "welcome25!",
+      "ajantha": "happy26!",
+      "dhanu":   "dhanu25!"
+    };
+    let ACTIVE_USER = null;
 
+    // Helper storage key per user
+    function userStorageKey(){
+      return ACTIVE_USER ? `clinicRun_v1_${ACTIVE_USER}` : 'clinicRun_v1_temp';
+    }
+
+    // ===============================
+    // MASTER LISTS (Merton + Surrey) with AV4L inserted
+    // ===============================
     const MASTER_MERTON = [
       {code:'Z2K',name:'Blue Cross Vets Merton',address:'88–92 Merton High St, Merton, SW19 1BD'},
       {code:'7FO17',name:'Wimbledon Veterinary Surgery',address:'170–172 Merton Road, Wimbledon, SW19 1EG'},
@@ -141,7 +171,7 @@
       {code:'OR1M',name:'Optivet London (South)',address:'Inside Pet Vet, 145 Morden Rd, Mitcham, CR4 4DB'},
       {code:'MIUG',name:'Mitcham Vet Clinic',address:'4 Upper Green East, Mitcham, CR4 2PA'},
       {code:'TO5L',name:'DNA Grp – Tooting',address:'5 London Road, SW17 9JR'},
-      {code:'AV4L',name:'Advanced Vert Care Streatham',address:'49 Leigham Court Road, Streatham, SW16 2NF'}, // inserted
+      {code:'AV4L',name:'Advanced Vert Care Streatham',address:'49 Leigham Court Road, Streatham, SW16 2NF'},
       {code:'7AN67',name:'Animal Choice',address:'67 Upper Tooting Park, Tooting, SW17 7SU'},
       {code:'VO3B',name:'Voo Vets – Balham',address:'31 Bedford Rd, Balham, SW12 9EY'},
       {code:'7ST10',name:'Streatham Hill Vet Surgery',address:'101 Sternhold Ave, Streatham Hill, SW2 4PF'},
@@ -223,11 +253,7 @@
       AV4L: 'No special instructions.'
     };
 
-    /* -------------------------
-       COORDINATES (approximate)
-       These are approximate lat/lon values to enable Cover routing.
-       Replace any coordinates with precise values for best routes.
-       ------------------------- */
+    // Approximate coordinates for routing (replace with exact for better results)
     const CLINIC_COORDS = {
       Z2K: {lat:51.409, lon:-0.177},
       '7FO17': {lat:51.4210, lon:-0.2083},
@@ -270,27 +296,27 @@
       IS1M: {lat:51.396, lon:-0.252}
     };
 
-    /* -------------------------
-       STATE & STORAGE
-       ------------------------- */
-    const STORAGE_KEY = 'clinicRun_v1';
+    // -------------------------
+    // STATE & STORAGE
+    // -------------------------
     let state = {area:null, parsed:[]};
-    let coverStartPoint = null; // {lat,lon}
+    let coverStartPoint = null;
 
     function load(){
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw) try{ state = JSON.parse(raw); } catch(e){}
+      const raw = localStorage.getItem(userStorageKey());
+      if(raw){
+        try{ state = JSON.parse(raw); }catch(e){ console.warn('load err',e); }
+      }
     }
     function save(){
       state.savedAt = new Date().toISOString();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      const el = document.getElementById('saved-ind');
-      if(el) el.innerText = new Date(state.savedAt).toLocaleTimeString();
+      localStorage.setItem(userStorageKey(), JSON.stringify(state));
+      const el = document.getElementById('saved-ind'); if(el) el.innerText = new Date(state.savedAt).toLocaleTimeString();
     }
 
-    /* -------------------------
-       PARSER (robust)
-       ------------------------- */
+    // -------------------------
+    // PARSER
+    // -------------------------
     function parseText(text){
       const noTotals = text.replace(/TOTAL\s+\d+/ig,'');
       const tokens = noTotals.split(/[^A-Za-z0-9]+/).map(t=>t.trim().toUpperCase()).filter(Boolean);
@@ -302,18 +328,17 @@
       return candidate.filter(c=>{ if(seen.has(c)) return false; seen.add(c); return true; });
     }
 
-    /* -------------------------
-       UTIL: get master depending on area
-       ------------------------- */
+    // -------------------------
+    // MASTER SELECTOR
+    // -------------------------
     function getMasterList(){
       if(state.area === 'Surrey') return MASTER_SURREY;
       return MASTER_MERTON;
     }
 
-    /* -------------------------
-       DISTANCE & ROUTE OPTIMISER
-       - nearest neighbour + 2-opt improvement
-       ------------------------- */
+    // -------------------------
+    // DISTANCE + ROUTE OPTIMISER
+    // -------------------------
     function haversine(a,b){
       const R = 6371;
       const dLat = (b.lat - a.lat) * Math.PI/180;
@@ -325,7 +350,6 @@
     }
 
     function twoOpt(route){
-      // route: array of objects with coords
       let improved = true;
       while(improved){
         improved = false;
@@ -338,7 +362,6 @@
             const before = haversine(a,b) + haversine(c,d);
             const after = haversine(a,c) + haversine(b,d);
             if(after + 0.000001 < before){
-              // reverse segment i..k
               const seg = route.slice(i,k+1).reverse();
               route.splice(i, k-i+1, ...seg);
               improved = true;
@@ -350,9 +373,8 @@
     }
 
     function optimizeCoverRoute(codes){
-      // Build clinic objects from Merton master (we need name/address)
+      // Combine masters to a lookup
       const masterAll = MASTER_MERTON.concat(MASTER_SURREY).reduce((acc,m)=>{acc[m.code]=m; return acc;},{});
-      // collect unique codes that exist in master or unknown
       const objs = codes.map(code=>{
         const found = masterAll[code];
         return {
@@ -363,34 +385,26 @@
         };
       }).filter(Boolean);
 
-      // If any coord missing, attempt to approximate from address text
+      // attempt to approximate coords if missing
       objs.forEach(o=>{
         if(!o.coords){
-          // try to find a code in CLINIC_COORDS by matching substring of address
           const addr = (o.address||'').toLowerCase();
-          for(const k in CLINIC_COORDS){
-            // cheap heuristic: compare borough keywords (streatham, epsom, wimbledon, putney, woking...)
-            if(addr.includes('streatham') && k === 'AV4L'){ o.coords = CLINIC_COORDS[k]; break; }
-            if(addr.includes('epsom') && k === 'WL3A'){ o.coords = CLINIC_COORDS[k]; break; }
-            if(addr.includes('wimbledon') && k === '7FO17'){ o.coords = CLINIC_COORDS[k]; break; }
-            if(addr.includes('merton') && k === 'Z2K'){ o.coords = CLINIC_COORDS[k]; break; }
-            if(addr.includes('tooting') && k === 'TO5L'){ o.coords = CLINIC_COORDS[k]; break; }
-            if(addr.includes('putney') && k === 'CPU'){ o.coords = CLINIC_COORDS[k]; break; }
-            if(addr.includes('wandsworth') && k === '7DA8B'){ o.coords = CLINIC_COORDS[k]; break; }
-            if(addr.includes('epsom') && k === 'WICO'){ o.coords = CLINIC_COORDS[k]; break; }
-          }
+          if(addr.includes('streatham')) o.coords = CLINIC_COORDS['AV4L'];
+          else if(addr.includes('epsom')) o.coords = CLINIC_COORDS['WL3A'];
+          else if(addr.includes('wimbledon')) o.coords = CLINIC_COORDS['7FO17'];
+          else if(addr.includes('merton')) o.coords = CLINIC_COORDS['Z2K'];
+          else if(addr.includes('tooting')) o.coords = CLINIC_COORDS['TO5L'];
+          else if(addr.includes('putney')) o.coords = CLINIC_COORDS['CPU'];
         }
-        // last fallback: if still null, place near central London (so routing still works)
-        if(!o.coords) o.coords = {lat:51.46, lon:-0.15};
+        if(!o.coords) o.coords = {lat:51.46, lon:-0.15}; // fallback centre
       });
 
-      // Start point:
-      const start = coverStartPoint || {lat:51.46, lon:-0.15}; // fallback center
-      const drop = {lat:51.3190, lon:-0.5584}; // Woking final drop
+      const start = coverStartPoint || {lat:51.46, lon:-0.15};
+      const drop = {lat:51.3190, lon:-0.5584}; // Woking
 
-      // Nearest neighbour
+      // nearest neighbour
       let remaining = objs.slice();
-      const sequence = [];
+      const route = [];
       let current = start;
       while(remaining.length){
         let nearestIdx = 0;
@@ -400,26 +414,23 @@
           if(d < nearestDist){ nearestDist = d; nearestIdx = i; }
         }
         const next = remaining.splice(nearestIdx,1)[0];
-        sequence.push(next);
+        route.push(next);
         current = next.coords;
       }
 
-      // append final drop as an object
-      sequence.push({...FINAL, coords: drop});
+      // append drop
+      route.push({...FINAL, coords: drop});
 
-      // run 2-opt to improve order if >3 points
-      if(sequence.length > 3){
-        // prepare for twoOpt: need coords on all items (they have .coords)
-        const improved = twoOpt(sequence);
-        return improved.map(s=>({code:s.code, name:s.name, address:s.address, info:INSTRUCTIONS[s.code]||''}));
+      if(route.length > 3){
+        const improved = twoOpt(route);
+        return improved.map(s=>({code:s.code, name:s.name, address:s.address, info: INSTRUCTIONS[s.code]||''}));
       }
-
-      return sequence.map(s=>({code:s.code, name:s.name, address:s.address, info:INSTRUCTIONS[s.code]||''}));
+      return route.map(s=>({code:s.code, name:s.name, address:s.address, info: INSTRUCTIONS[s.code]||''}));
     }
 
-    /* -------------------------
-       UI + Flow
-       ------------------------- */
+    // ===============================
+    // UI refs & flow
+    // ===============================
     const chooseScreen = document.getElementById('choose-screen');
     const inputScreen = document.getElementById('input-screen');
     const listScreen = document.getElementById('list-screen');
@@ -435,6 +446,7 @@
 
     document.getElementById('back-to-choose').addEventListener('click', ()=> show('choose'));
 
+    // Area selection
     document.querySelectorAll('.btn-choose').forEach(b => b.addEventListener('click', e=>{
       const a = e.target.dataset.area;
       state.area = a;
@@ -447,28 +459,26 @@
       save();
     }));
 
+    // Cover start controls
     document.getElementById('cover-back-btn').addEventListener('click', ()=> show('choose'));
-
     document.getElementById('cover-gps-btn').addEventListener('click', ()=>{
-      if(!navigator.geolocation){ alert('GPS not supported in this browser'); return; }
+      if(!navigator.geolocation){ alert('GPS not supported'); return; }
       navigator.geolocation.getCurrentPosition(pos=>{
         coverStartPoint = {lat: pos.coords.latitude, lon: pos.coords.longitude};
         areaLabel.innerText = 'Cover — Paste & parse';
         show('input');
       }, err => alert('GPS error: ' + err.message));
     });
-
     document.getElementById('cover-address-btn').addEventListener('click', ()=>{
       const addr = document.getElementById('cover-address-input').value.trim();
-      if(!addr){ alert('Enter an address or use GPS'); return; }
+      if(!addr){ alert('Enter address'); return; }
       geocodeAddress(addr).then(coord=>{
         coverStartPoint = coord;
         areaLabel.innerText = 'Cover — Paste & parse';
         show('input');
-      }).catch(()=> alert('Address not recognized. Try GPS or a nearby town name like "Streatham"'));
+      }).catch(()=> alert('Address not recognized — try a nearby town name (e.g., Streatham)'));
     });
 
-    // simple local geocoder for towns / fallback
     function geocodeAddress(addr){
       const a = addr.toLowerCase();
       if(a.includes('woking')) return Promise.resolve({lat:51.3190, lon:-0.5584});
@@ -483,11 +493,10 @@
       if(a.includes('wandsworth')) return Promise.resolve({lat:51.459, lon:-0.191});
       if(a.includes('chelsea')) return Promise.resolve({lat:51.492, lon:-0.160});
       if(a.includes('notting hill')) return Promise.resolve({lat:51.512, lon:-0.206});
-      if(a.includes('marylebone')) return Promise.resolve({lat:51.519, lon:-0.138});
       return Promise.reject();
     }
 
-    // parse button
+    // Parse button
     parseBtn.addEventListener('click', ()=>{
       const txt = rawInput.value || '';
       const codes = parseText(txt);
@@ -495,9 +504,9 @@
       show('list');
       save();
     });
-
     clearBtn.addEventListener('click', ()=> rawInput.value='');
 
+    // Add manual
     document.getElementById('add-btn').addEventListener('click', ()=>{
       const v = document.getElementById('add-code').value.trim();
       if(!v) return;
@@ -506,15 +515,21 @@
       save();
     });
 
-    /* -------------------------
-       Build list (handles Cover special)
-       ------------------------- */
+    // Logout
+    document.getElementById('logout-btn').addEventListener('click', ()=>{
+      localStorage.removeItem('active_clinix_user');
+      ACTIVE_USER = null;
+      state = {area:null, parsed:[]};
+      coverStartPoint = null;
+      showLogin();
+    });
+
+    // -------------------------
+    // buildList (handles cover)
+    // -------------------------
     function buildList(codes){
-      // if Cover -> optimized route
       if(state.area === 'Cover'){
-        // optimize and map to state.parsed items
-        const seq = optimizeCoverRoute(codes); // returns array of {code,name,address,info}
-        // Convert to internal format
+        const seq = optimizeCoverRoute(codes);
         state.parsed = seq.map(s=>({
           code: s.code,
           name: s.name || s.code,
@@ -526,13 +541,11 @@
           done: false,
           added: false
         }));
-        // ensure final drop present (optimizeCoverRoute already appended it)
-        if(state.parsed[state.parsed.length-1].code !== 'DROP') state.parsed.push({...FINAL, selected:null,quantity:null,icebox:false,done:false});
+        if(state.parsed[state.parsed.length-1].code !== 'DROP') state.parsed.push({...FINAL, selected:null, quantity:null, icebox:false, done:false});
         save();
         return;
       }
 
-      // Non-Cover: use selected master list for ordering
       const MASTER = getMasterList();
       const masterIndex = {};
       MASTER.forEach((m,i)=> masterIndex[m.code]=i);
@@ -554,7 +567,7 @@
 
       const known = objs.filter(o=>masterIndex[o.code]!==undefined).sort((a,b)=>masterIndex[a.code]-masterIndex[b.code]);
       const unknown = objs.filter(o=>masterIndex[o.code]===undefined).sort((a,b)=>a.code.localeCompare(b.code));
-      state.parsed = [...known,...unknown,{...FINAL,selected:null,quantity:null,icebox:false,done:false}];
+      state.parsed = [...known,...unknown,{...FINAL, selected:null, quantity:null, icebox:false, done:false}];
       save();
     }
 
@@ -573,15 +586,15 @@
         added:true
       };
       const withoutFinal = state.parsed.filter(p=>p.code!=='DROP');
-      const final = state.parsed.find(p=>p.code==='DROP') || {...FINAL, selected:null,quantity:null,icebox:false,done:false};
+      const final = state.parsed.find(p=>p.code==='DROP') || {...FINAL, selected:null, quantity:null, icebox:false, done:false};
       withoutFinal.push(obj);
       state.parsed = [...withoutFinal, final];
       renderList();
     }
 
-    /* -------------------------
-       RENDER LIST + CONTROLS
-       ------------------------- */
+    // -------------------------
+    // RENDER LIST + CONTROLS
+    // -------------------------
     function renderList(){
       checklist.innerHTML = '';
       state.parsed.forEach((item, idx)=>{
@@ -665,18 +678,17 @@
       runInfo.innerText = (state.area || 'Run') + ' — ' + done + '/' + total;
 
       // remove earlier dynamic end trip button if any
-      const oldBtn = document.getElementById('endtrip');
-      if(oldBtn) oldBtn.remove();
+      const oldBtn = document.getElementById('endtrip'); if(oldBtn) oldBtn.remove();
 
-      // show End Trip ONLY when all are done
       if(done === total && total > 0){
         const footer = document.querySelector('footer');
         const btn = document.createElement('button'); btn.id = 'endtrip'; btn.className = 'endtrip'; btn.innerText = 'End Trip';
         btn.addEventListener('click', ()=>{
           if(confirm('End trip and clear all data?')){
-            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(userStorageKey());
             state = {area:null, parsed:[]};
             coverStartPoint = null;
+            save();
             show('choose');
           }
         });
@@ -691,25 +703,62 @@
 
     function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    /* -------------------------
-       INITIALISE / LOAD
-       ------------------------- */
-    load();
-    if(state.parsed.length > 0) show('list');
-    else if(state.area){ areaLabel.innerText = state.area + ' — Paste & parse'; show('input'); }
-    else show('choose');
-
+    // -------------------------
+    // INITIAL LOAD / SHOW / LOGIN
+    // -------------------------
     function show(which){
+      // screens
+      document.getElementById('login-screen').style.display = 'none';
       chooseScreen.style.display = which==='choose' ? 'block' : 'none';
       coverStartScreen.style.display = which==='cover-start' ? 'block' : 'none';
       inputScreen.style.display = which==='input' ? 'block' : 'none';
       listScreen.style.display = which==='list' ? 'block' : 'none';
+      // render list if needed
       if(which === 'list') renderList();
     }
 
-    // register service worker (if present)
+    function showLogin(){
+      document.getElementById('login-screen').style.display = 'block';
+      document.getElementById('app').style.display = 'none';
+    }
+    function showApp(){
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+    }
+
+    // Auto-login if saved
+    const savedUser = localStorage.getItem('active_clinix_user');
+    if(savedUser && USERS[savedUser]){
+      ACTIVE_USER = savedUser;
+      load();
+      showApp();
+      if(state.parsed && state.parsed.length>0) show('list');
+      else if(state.area) { areaLabel.innerText = state.area + ' — Paste & parse'; show('input'); }
+      else show('choose');
+    } else {
+      showLogin();
+    }
+
+    // Login button
+    document.getElementById('login-btn').addEventListener('click', ()=>{
+      const user = document.getElementById('login-username').value.trim();
+      const pass = document.getElementById('login-password').value;
+      if(USERS[user] && USERS[user] === pass){
+        ACTIVE_USER = user;
+        localStorage.setItem('active_clinix_user', user);
+        load();
+        showApp();
+        if(state.parsed && state.parsed.length>0) show('list');
+        else if(state.area) { areaLabel.innerText = state.area + ' — Paste & parse'; show('input'); }
+        else show('choose');
+      } else {
+        document.getElementById('login-error').style.display = 'block';
+      }
+    });
+
+    // register service worker
     if('serviceWorker' in navigator){
-      try{ navigator.serviceWorker.register('service-worker.js'); } catch(e) { console.warn('SW reg failed', e); }
+      try{ navigator.serviceWorker.register('service-worker.js'); } catch(e){ console.warn('SW failed', e); }
     }
   </script>
 </body>
