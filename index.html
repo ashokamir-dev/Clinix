@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -50,8 +49,9 @@
     @media(min-width:520px){body{background:#fff} .screen{box-shadow:0 6px 20px rgba(2,6,23,0.06);border-radius:14px;margin-top:20px}}
   </style>
 </head>
+
 <body>
-  <!-- LOGIN SCREEN (shown before the app if not logged in) -->
+  <!-- LOGIN SCREEN -->
   <div id="login-screen" class="big-card" style="display:none;max-width:480px;margin:20px auto">
     <h1>Clinix Login</h1>
     <input id="login-username" placeholder="Username" style="width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1px solid #ccc"/>
@@ -60,9 +60,9 @@
     <div id="login-error" style="color:red;margin-top:10px;display:none">Invalid username or password</div>
   </div>
 
-  <!-- MAIN APP (hidden until login) -->
+  <!-- FULL APP -->
   <div class="screen" id="app" style="display:none">
-    <!-- CHOOSE -->
+
     <div id="choose-screen" class="big-card">
       <h1>Select area to start</h1>
       <div class="choices">
@@ -73,7 +73,6 @@
       <p style="margin-top:12px;color:var(--muted)">Choose one to continue — this only sets a label for the run.</p>
     </div>
 
-    <!-- COVER START SCREEN -->
     <div id="cover-start-screen" class="big-card" style="display:none">
       <h1>Start Location</h1>
       <button class="primary" id="cover-gps-btn">Use My GPS Location</button>
@@ -85,7 +84,6 @@
       </div>
     </div>
 
-    <!-- INPUT SCREEN -->
     <div id="input-screen" class="big-card" style="display:none">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <h1 id="area-label">Run</h1>
@@ -100,7 +98,6 @@
       </div>
     </div>
 
-    <!-- LIST SCREEN -->
     <div id="list-screen" style="display:none">
       <div class="big-card">
         <div style="display:flex;justify-content:space-between;align-items:center">
@@ -108,7 +105,6 @@
           <div style="font-size:13px;color:var(--muted)" id="run-info">Area</div>
         </div>
 
-        <!-- Logout -->
         <div style="text-align:right;margin-bottom:10px">
           <span id="logout-btn" style="font-size:13px;color:#dc2626;cursor:pointer">Logout</span>
         </div>
@@ -137,91 +133,26 @@
   </div>
 
   <script>
-    // ===============================
-    // SIMPLE USER AUTH (hardcoded)
-    // ===============================
-    const USERS = {
-      "ashok":   "welcome25!",
-      "ajant": "happy26!",
-      "dhanu":   "dhanu25!"
-    };
+    const USERS = {"ashok":"welcome25!","ajant":"happy26!","dhanu":"dhanu25!"};
     let ACTIVE_USER = null;
 
-    // Helper storage key per user
-    function userStorageKey(){
-      return ACTIVE_USER ? `clinicRun_v1_${ACTIVE_USER}` : 'clinicRun_v1_temp';
-    }
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("login-screen").style.display = "block";
+      document.getElementById("app").style.display = "none";
+    });
 
-    // ===============================
-    // MASTER LISTS (Merton + Surrey) with AV4L inserted
-    // ===============================
-    const MASTER_MERTON = [
-      {code:'Z2K',name:'Blue Cross Vets Merton',address:'88–92 Merton High St, Merton, SW19 1BD'},
-      {code:'7FO17',name:'Wimbledon Veterinary Surgery',address:'170–172 Merton Road, Wimbledon, SW19 1EG'},
-      {code:'7KY13',name:'Kydd & Kydd (Medivet Wimbledon)',address:'1–3 Leopold Rd, Wimbledon, SW19 7BB'},
-      {code:'TH1S',name:'The Corner Veterinary Clinic',address:'1 Stayton Road, Sutton, SM1 1QY'},
-      {code:'PR11',name:'Priory Vet Surgeons Ltd (Tadworth)',address:'Northlodge, 11 High St, Tadworth, KT20 5SD'},
-      {code:'KGVS',name:'Kriek & Gibson Vet Surgery',address:'38 Brighton Rd, Banstead, Surrey, SM7 1BT'},
-      {code:'WL3A',name:'DNA Grp – Winton Lodge Epsom',address:'36 Ashley Road, Epsom, KT18 5BH'},
-      {code:'HEWP',name:'Voo Vet Group – Worcester Park',address:'5 The Parade, Vale Road, Worcester Park, KT4 7EE'},
-      {code:'WICO',name:'Medivet Epsom Pound',address:'Court Lodge, Pound Lane, Epsom, KT19 8SB'},
-      {code:'ARVS',name:'CVS Avenue Road Vet Surgeons',address:'Avenue Road, Wallington, Surrey, SM6 9QF'},
-      {code:'PKS',name:'Parkside Vet Surgery',address:'61 Ruskin Rd, Carshalton, SM5 3DD'},
-      {code:'OR1M',name:'Optivet London (South)',address:'Inside Pet Vet, 145 Morden Rd, Mitcham, CR4 4DB'},
-      {code:'MIUG',name:'Mitcham Vet Clinic',address:'4 Upper Green East, Mitcham, CR4 2PA'},
-      {code:'TO5L',name:'DNA Grp – Tooting',address:'5 London Road, SW17 9JR'},
-      {code:'AV4L',name:'Advanced Vert Care Streatham',address:'49 Leigham Court Road, Streatham, SW16 2NF'},
-      {code:'7AN67',name:'Animal Choice',address:'67 Upper Tooting Park, Tooting, SW17 7SU'},
-      {code:'VO3B',name:'Voo Vets – Balham',address:'31 Bedford Rd, Balham, SW12 9EY'},
-      {code:'7ST10',name:'Streatham Hill Vet Surgery',address:'101 Sternhold Ave, Streatham Hill, SW2 4PF'},
-      {code:'HY64',name:'Voo Vets – Battersea',address:'644a Wandsworth Road, London, SW8 3JW'},
-      {code:'7AL85',name:'All Creatures Vet Surgery',address:'85 Lavender Hill, Battersea, SW11 5QL'},
-      {code:'BA4B',name:'Battersea Dogs & Cats Home',address:'4 Battersea Park Road, London, SW8 4AA'},
-      {code:'7EL55',name:'Elizabeth Street Vet Clinic',address:'55 Elizabeth St, London, SW1W 9PP'},
-      {code:'Z1K',name:'Blue Cross Animal Hospital (Victoria)',address:'Shephard House, 1–5 Hugh St, Victoria, SW1V 1QQ'},
-      {code:'VBR',name:'Virtue Vets – Chelsea',address:'295–297 Brompton Rd, London, SW3 2DY'},
-      {code:'7BR96',name:'Brompton Vets',address:'90 Fulham Road, London, SW3 6HR'},
-      {code:'CFU',name:'Creature Comforts – Chelsea',address:'281 Fulham Road, Chelsea, SW10 9PZ'},
-      {code:'VBO',name:'Virtue Vets – Chelsea The Boltons',address:'351 Fulham Road, Chelsea, SW10 9TW'},
-      {code:'CH36',name:'Waggintails – Chelsea Vet Clinic',address:'364 Fulham Rd, Chelsea, SW10 9UU'}
-    ];
+    document.getElementById("login-btn").addEventListener("click", () => {
+      const username = document.getElementById("login-username").value.trim();
+      const password = document.getElementById("login-password").value.trim();
 
-    // ===========================
-    // FINAL DROP AND INSTRUCTIONS
-    // ===========================
-    const FINAL = {code:'DROP',name:'Orchard Business Park, Forsyth Rd, Woking GU21 5SB',address:'Orchard Business Park, Forsyth Rd, Woking GU21 5SB'};
-    const INSTRUCTIONS = {
-      CFU: 'Unlock door with square headed key. Remove key. Unlock door magnet with pin code 0725. Disarm alarm with code 0725 and tick. Pick up package from reception desk. If no package, take a photograph. Arm alarm 0725 and tick. Press magnet release to open door. Lock door with key.',
-      CPU: 'Box is at the back on a side road (Deodar Road), alleyway all the way at the end of alley.',
-      TO5L: 'Open key safe with code 7821. Open door with key from safe. Sample box behind the door. Lock door with key from safe. Put key back into safe and change code.',
-      VBO: 'Open gate with padlock key. Walk all the way to the back. Box is on the left side. Lock gate with padlock key.',
-      CCN: 'Open door with large key. Enter code 1216 to unlock magnet. Enter code 2513 to disarm alarm. Take sample. Arm alarm 2513. Lock door with large key.',
-      CCS: 'Entrance is by side road with gate. Code to enter gate: 9876. Sample is by tiny alleyway after few doors on the right. Code to exit gate: 9876.',
-      VVM: 'Padlock to go down 02024. Padlock sometimes gets stuck; pull harder to unlock.',
-      SC3E: 'Front garden of house at 49 Heythorp Street SW18 5BS. Sample is inside front garden shed. Padlock code 1910. Lock shed when finished.',
-      OR1M: 'Box is located on the side of the car park where the recycling trolleys are. Drive straight when you turn into the road. Code to open the box: 936.',
-      AV4L: 'No special instructions.'
-    };
-
-
-    function userStorageKey(){
-      return ACTIVE_USER ? `clinicRun_v1_${ACTIVE_USER}` : 'clinicRun_v1_temp';
-    }
-
-    // ===========================
-    // INIT SYSTEM
-    // ===========================
-    function load(){
-      const raw = localStorage.getItem(userStorageKey());
-      if(raw){
-        try{ state = JSON.parse(raw) }catch(e){ console.warn('load err',e) }
+      if (USERS[username] && USERS[username] === password) {
+        ACTIVE_USER = username;
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("app").style.display = "block";
+      } else {
+        document.getElementById("login-error").style.display = "block";
       }
-    }
-    function save(){
-      state.savedAt = new Date().toISOString();
-      localStorage.setItem(userStorageKey(), JSON.stringify(state));
-      const el = document.getElementById('saved-ind'); if(el) el.innerText = new Date(state.savedAt).toLocaleTimeString();
-    }
+    });
   </script>
 </body>
 </html>
