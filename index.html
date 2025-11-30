@@ -560,13 +560,16 @@ document.getElementById('change-nav').addEventListener('click', async () => {
     });
 
     // Logout
-    document.getElementById('logout-btn').addEventListener('click', ()=>{
-      localStorage.removeItem('active_clinix_user');
-      ACTIVE_USER = null;
-      state = {area:null, parsed:[]};
-      coverStartPoint = null;
-      showLogin();
-    });
+    document.getElementById('logout-btn').addEventListener('click', () => {
+  if (!confirm("Are you sure you want to log out?")) return;
+
+  localStorage.removeItem('active_clinix_user');
+  ACTIVE_USER = null;
+  state = {area:null, parsed:[]};
+  coverStartPoint = null;
+  showLogin();
+});
+
 
     // -------------------------
     // buildList (handles cover)
@@ -772,12 +775,16 @@ document.getElementById('change-nav').addEventListener('click', async () => {
         const footer = document.querySelector('footer');
         const btn = document.createElement('button'); btn.id = 'endtrip'; btn.className = 'endtrip'; btn.innerText = 'End Trip';
         btn.addEventListener('click', ()=>{
-          if(confirm('End trip and clear all data?')){
-            localStorage.removeItem(userStorageKey());
-            state = {area:null, parsed:[]};
-            coverStartPoint = null;
-            save();
-            show('choose');
+          if (!confirm("Are you sure you want to END this trip? All progress will be cleared.")) {
+    return;
+}
+
+localStorage.removeItem(userStorageKey());
+state = {area:null, parsed:[]};
+coverStartPoint = null;
+save();
+show('choose');
+
           }
         });
         footer.appendChild(btn);
