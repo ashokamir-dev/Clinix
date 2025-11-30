@@ -203,15 +203,6 @@
       AV4L: 'No special instructions.'
     };
 
-    // ===========================
-    // USER DATA AND STORAGE
-    // ===========================
-    const USERS = {
-      "ashok":   "welcome25!",
-      "ajantha": "happy26!",
-      "dhanu":   "dhanu25!"
-    };
-    let ACTIVE_USER = null;
 
     function userStorageKey(){
       return ACTIVE_USER ? `clinicRun_v1_${ACTIVE_USER}` : 'clinicRun_v1_temp';
