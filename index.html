@@ -616,25 +616,69 @@ document.getElementById('change-nav').addEventListener('click', async () => {
     }
 
     function addManual(input){
-      const code = input.toUpperCase().replace(/[^A-Z0-9]/g,'');
-      const found = MASTER_MERTON.find(m=>m.code===code) || MASTER_SURREY.find(m=>m.code===code);
-      const obj = {
-        code: code || input,
-        name: found?found.name:input,
-        address: found?found.address:'',
-        info: INSTRUCTIONS[code]||'',
-        selected:null,
-        quantity:null,
-        icebox:false,
-        done:false,
-        added:true
-      };
-      const withoutFinal = state.parsed.filter(p=>p.code!=='DROP');
-      const final = state.parsed.find(p=>p.code==='DROP') || {...FINAL, selected:null, quantity:null, icebox:false, done:false};
-      withoutFinal.push(obj);
-      state.parsed = [...withoutFinal, final];
-      renderList();
-    }
+  const code = input.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const MASTER = getMasterList(); // Correct master list based on Surrey/Merton selection
+
+  // Find if code exists in master lists
+  const found = MASTER.find(m=>m.code===code) 
+              || MASTER_MERTON.find(m=>m.code===code) 
+              || MASTER_SURREY.find(m=>m.code===code);
+
+  // Build new clinic object
+  const obj = {
+    code: code || input,
+    name: found ? found.name : input,
+    address: found ? found.address : '',
+    info: INSTRUCTIONS[code] || '',
+    selected:null,
+    quantity:null,
+    icebox:false,
+    done:false,
+    added:true
+  };
+
+  // Remove DROP
+  let withoutFinal = state.parsed.filter(p => p.code !== 'DROP');
+
+  // Insert in correct master order:
+  if (found) {
+    // Get master index for sorting
+    const masterIndex = {};
+    MASTER.forEach((m,i)=> masterIndex[m.code] = i);
+
+    // Insert the new item
+    withoutFinal.push(obj);
+
+    // Sort known items by master sequence
+    withoutFinal.sort((a,b)=>{
+      const ai = masterIndex[a.code];
+      const bi = masterIndex[b.code];
+
+      // Both in master list → compare positions
+      if (ai !== undefined && bi !== undefined) return ai - bi;
+
+      // Only one in master → master comes first
+      if (ai !== undefined) return -1;
+      if (bi !== undefined) return 1;
+
+      // None in master → alphabetical fallback
+      return a.code.localeCompare(b.code);
+    });
+
+  } else {
+    // Unknown clinic → insert after known ones but before DROP
+    withoutFinal.push(obj);
+  }
+
+  // Add DROP back at end
+  const final = state.parsed.find(p=>p.code==='DROP') || 
+                {...FINAL, selected:null, quantity:null, icebox:false, done:false};
+
+  state.parsed = [...withoutFinal, final];
+  save();
+  renderList();
+}
+
 
     // -------------------------
     // RENDER LIST + CONTROLS
