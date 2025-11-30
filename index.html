@@ -108,12 +108,12 @@
           <h1>Checklist</h1>
           <div style="font-size:13px;color:var(--muted)" id="run-info">Area</div>
         </div>
-<!-- Change navigation app -->
-<div style="text-align:right;margin:5px 0;">
-  <span id="change-nav" style="font-size:13px;color:#0b69ff;cursor:pointer;text-decoration:underline;">
-    Change Navigation App
-  </span>
-</div>
+        <!-- Change navigation app -->
+        <div style="text-align:right;margin:5px 0;">
+          <span id="change-nav" style="font-size:13px;color:#0b69ff;cursor:pointer;text-decoration:underline;">
+            Change Navigation App
+          </span>
+        </div>
 
         <!-- Logout -->
         <div style="text-align:right;margin-bottom:10px">
@@ -155,135 +155,91 @@
     let ACTIVE_USER = null;
 
     // Navigation app preference per user
-function navKey() {
-  return ACTIVE_USER ? `nav_app_${ACTIVE_USER}` : `nav_app_temp`;
-}
-
-function getNavApp() {
-  return localStorage.getItem(navKey()) || null;
-}
-
-function setNavApp(app) {
-  localStorage.setItem(navKey(), app);
-}
-
-// Show prompt to pick app
-function chooseNavApp() {
-  return new Promise(resolve => {
-    const app = prompt(
-      "Choose navigation app:\n1 = Google Maps\n2 = Apple Maps\n3 = Waze",
-      "1"
-    );
-
-    let chosen = null;
-
-    if (app === "1") chosen = "google";
-    if (app === "2") chosen = "apple";
-    if (app === "3") chosen = "waze";
-
-    if (!chosen) chosen = "google"; // default fallback
-
-    setNavApp(chosen);
-    resolve(chosen);
-  });
-}
-document.getElementById('change-nav').addEventListener('click', async () => {
-  await chooseNavApp();
-  alert("Navigation app updated for this session.");
-});
-
-    // Helper storage key per user
-    function userStorageKey(){
-      return ACTIVE_USER ? `clinicRun_v1_${ACTIVE_USER}` : 'clinicRun_v1_temp';
+    function navKey() {
+      return ACTIVE_USER ? `nav_app_${ACTIVE_USER}` : `nav_app_temp`;
     }
 
+    function getNavApp() {
+      return localStorage.getItem(navKey()) || null;
+    }
+
+    function setNavApp(app) {
+      localStorage.setItem(navKey(), app);
+    }
+
+    // Show prompt to pick app
+    function chooseNavApp() {
+      return new Promise(resolve => {
+        const app = prompt(
+          "Choose navigation app:\n1 = Google Maps\n2 = Apple Maps\n3 = Waze",
+          "1"
+        );
+
+        let chosen = null;
+
+        if (app === "1") chosen = "google";
+        if (app === "2") chosen = "apple";
+        if (app === "3") chosen = "waze";
+
+        if (!chosen) chosen = "google"; // default fallback
+
+        setNavApp(chosen);
+        resolve(chosen);
+      });
+    }
+    document.getElementById('change-nav').addEventListener('click', async () => {
+      await chooseNavApp();
+      alert("Navigation app updated for this session.");
+    });
+
     // ===============================
-    // MASTER LISTS (Merton + Surrey) with AV4L inserted
+    // MASTER LISTS (Merton + Surrey)
     // ===============================
     const MASTER_MERTON = [
-      {code:'Z2K',name:'Blue Cross Vets Merton',address:'88–92 Merton High St, Merton, SW19 1BD'},
-      {code:'7FO17',name:'Wimbledon Veterinary Surgery',address:'170–172 Merton Road, Wimbledon, SW19 1EG'},
-      {code:'7KY13',name:'Kydd & Kydd (Medivet Wimbledon)',address:'1–3 Leopold Rd, Wimbledon, SW19 7BB'},
+      {code:'Z2K',name:'Blue Cross Vets Merton',address:'88-92 Merton High St, Merton, SW19 1BD'},
+      {code:'7FO17',name:'Wimbledon Veterinary Surgery',address:'170-172 Merton Road, Wimbledon, SW19 1EG'},
+      {code:'7KY13',name:'Kydd & Kydd (Medivet Wimbledon)',address:'1-3 Leopold Rd, Wimbledon, SW19 7BB'},
       {code:'TH1S',name:'The Corner Veterinary Clinic',address:'1 Stayton Road, Sutton, SM1 1QY'},
       {code:'PR11',name:'Priory Vet Surgeons Ltd (Tadworth)',address:'Northlodge, 11 High St, Tadworth, KT20 5SD'},
       {code:'KGVS',name:'Kriek & Gibson Vet Surgery',address:'38 Brighton Rd, Banstead, Surrey, SM7 1BT'},
-      {code:'WL3A',name:'DNA Grp – Winton Lodge Epsom',address:'36 Ashley Road, Epsom, KT18 5BH'},
-      {code:'HEWP',name:'Voo Vet Group – Worcester Park',address:'5 The Parade, Vale Road, Worcester Park, KT4 7EE'},
+      {code:'WL3A',name:'DNA Grp,  Winton Lodge Epsom',address:'36 Ashley Road, Epsom, KT18 5BH'},
+      {code:'HEWP',name:'Voo Vet Group, Worcester Park',address:'5 The Parade, Vale Road, Worcester Park, KT4 7EE'},
       {code:'WICO',name:'Medivet Epsom Pound',address:'Court Lodge, Pound Lane, Epsom, KT19 8SB'},
       {code:'ARVS',name:'CVS Avenue Road Vet Surgeons',address:'Avenue Road, Wallington, Surrey, SM6 9QF'},
       {code:'PKS',name:'Parkside Vet Surgery',address:'61 Ruskin Rd, Carshalton, SM5 3DD'},
       {code:'OR1M',name:'Optivet London (South)',address:'Inside Pet Vet, 145 Morden Rd, Mitcham, CR4 4DB'},
       {code:'MIUG',name:'Mitcham Vet Clinic',address:'4 Upper Green East, Mitcham, CR4 2PA'},
-      {code:'TO5L',name:'DNA Grp – Tooting',address:'5 London Road, SW17 9JR'},
+      {code:'TO5L',name:'DNA Grp, Tooting',address:'5 London Road, SW17 9JR'},
       {code:'AV4L',name:'Advanced Vert Care Streatham',address:'49 Leigham Court Road, Streatham, SW16 2NF'},
       {code:'7AN67',name:'Animal Choice',address:'67 Upper Tooting Park, Tooting, SW17 7SU'},
-      {code:'VO3B',name:'Voo Vets – Balham',address:'31 Bedford Rd, Balham, SW12 9EY'},
+      {code:'VO3B',name:'Voo Vets, Balham',address:'31 Bedford Rd, Balham, SW12 9EY'},
       {code:'7ST10',name:'Streatham Hill Vet Surgery',address:'101 Sternhold Ave, Streatham Hill, SW2 4PF'},
-      {code:'HY64',name:'Voo Vets – Battersea',address:'644a Wandsworth Road, London, SW8 3JW'},
+      {code:'HY64',name:'Voo Vets, Battersea',address:'644a Wandsworth Road, London, SW8 3JW'},
       {code:'7AL85',name:'All Creatures Vet Surgery',address:'85 Lavender Hill, Battersea, SW11 5QL'},
       {code:'BA4B',name:'Battersea Dogs & Cats Home',address:'4 Battersea Park Road, London, SW8 4AA'},
       {code:'7EL55',name:'Elizabeth Street Vet Clinic',address:'55 Elizabeth St, London, SW1W 9PP'},
-      {code:'Z1K',name:'Blue Cross Animal Hospital (Victoria)',address:'Shephard House, 1–5 Hugh St, Victoria, SW1V 1QQ'},
-      {code:'VBR',name:'Virtue Vets – Chelsea',address:'295–297 Brompton Rd, London, SW3 2DY'},
+      {code:'Z1K',name:'Blue Cross Animal Hospital (Victoria)',address:'Shephard House, 1-5 Hugh St, Victoria, SW1V 1QQ'},
+      {code:'VBR',name:'Virtue Vets, Chelsea',address:'295-297 Brompton Rd, London, SW3 2DY'},
       {code:'7BR96',name:'Brompton Vets',address:'90 Fulham Road, London, SW3 6HR'},
-      {code:'CFU',name:'Creature Comforts – Chelsea',address:'281 Fulham Road, Chelsea, SW10 9PZ'},
-      {code:'VBO',name:'Virtue Vets – Chelsea The Boltons',address:'351 Fulham Road, Chelsea, SW10 9TW'},
-      {code:'CH36',name:'Waggintails – Chelsea Vet Clinic',address:'364 Fulham Rd, Chelsea, SW10 9UU'},
+      {code:'CFU',name:'Creature Comforts,  Chelsea',address:'281 Fulham Road, Chelsea, SW10 9PZ'},
+      {code:'VBO',name:'Virtue Vets,  Chelsea The Boltons',address:'351 Fulham Road, Chelsea, SW10 9TW'},
+      {code:'CH36',name:'Waggintails,  Chelsea Vet Clinic',address:'364 Fulham Rd, Chelsea, SW10 9UU'},
       {code:'7AB85',name:'Abingdon Vet Surgery',address:'85 Earls Court Road, London, W8 6EF'},
       {code:'7ADAD',name:'The Holland Park Vet Clinic',address:'7 Addison Ave, Holland Park, London, W11 4QS'},
-      {code:'CCN',name:'Creature Comforts – Notting Hill',address:'241 Westbourne Grove, Notting Hill, W11 2SE'},
-      {code:'VIN',name:'Virtue Vets – Notting Hill',address:'20 Chepstow Corner, Chepstow Place, Notting Hill, W2 4XE'},
-      {code:'CCS',name:'Creature Comforts – St Johns Wood',address:'9–11 St Johns Wood High St, NW8 7NG'},
-      {code:'VVM',name:'Virtue Vet – Marylebone',address:'6 Nottingham Street, Marylebone, W1U 5EJ'},
+      {code:'CCN',name:'Creature Comforts,  Notting Hill',address:'241 Westbourne Grove, Notting Hill, W11 2SE'},
+      {code:'VIN',name:'Virtue Vets,  Notting Hill',address:'20 Chepstow Corner, Chepstow Place, Notting Hill, W2 4XE'},
+      {code:'CCS',name:'Creature Comforts,  St Johns Wood',address:'9-11 St Johns Wood High St, NW8 7NG'},
+      {code:'VVM',name:'Virtue Vets, Marylebone',address:'6 Nottingham Street, Marylebone, W1U 5EJ'},
       {code:'Z4K',name:'Blue Cross Animal Hospital (Hammersmith)',address:'Argyle Place, Hammersmith, W6 0RQ'},
-      {code:'CPU',name:'Creature Comforts – Putney',address:'212 Putney Bridge Rd, SW15 2NA'},
-      {code:'7DA8B',name:'Voo Vet Group – Wandsworth',address:'8 Barmouth Road, London, SW18 2DN'},
-      {code:'SC3E',name:'Scourfield Vet Services',address:'49 Heythorp Street, London, SW18 5BS'},
-      {code:'IS1M',name:'Islander Vets',address:'129 Manor Drive North, New Malden, KT3 5PD'}
+      {code:'CPU',name:'Creature Comforts, Putney',address:'212 Putney Bridge Rd, SW15 2NA'},
+      {code:'7DA8B',name:'Voo Vet Group, Wandsworth',address:'8 Barmouth Road, London, SW18 2DN'},
+      {code:'IS1M' ,name:'Islander Vets, Morden Mannor',address:'129 Manor Dr N, New Malden, KT3 5PD'},
     ];
 
-    const MASTER_SURREY = [
-      {code:'HEWP',name:'Voo Vet Group – Worcester Park',address:'5 The Parade, Vale Road, Worcester Park, KT4 7EE'},
-      {code:'WL3A',name:'DNA Grp – Winton Lodge Epsom',address:'36 Ashley Road, Epsom, KT18 5BH'},
-      {code:'PR11',name:'Priory Vet Surgeons Ltd (Tadworth)',address:'Northlodge, 11 High St, Tadworth, KT20 5SD'},
-      {code:'KGVS',name:'Kriek & Gibson Vet Surgery',address:'38 Brighton Rd, Banstead, Surrey, SM7 1BT'},
-      {code:'ARVS',name:'CVS Avenue Road Vet Surgeons',address:'Avenue Road, Wallington, Surrey, SM6 9QF'},
-      {code:'PKS',name:'Parkside Vet Surgery',address:'61 Ruskin Rd, Carshalton, SM5 3DD'},
-      {code:'TH1S',name:'The Corner Veterinary Clinic',address:'1 Stayton Road, Sutton, SM1 1QY'},
-      {code:'OR1M',name:'Optivet London (South)',address:'Inside Pet Vet, 145 Morden Rd, Mitcham, CR4 4DB'},
-      {code:'MIUG',name:'Mitcham Vet Clinic',address:'4 Upper Green East, Mitcham, CR4 2PA'},
-      {code:'TO5L',name:'DNA Grp – Tooting',address:'5 London Road, SW17 9JR'},
-      {code:'AV4L',name:'Advanced Vert Care Streatham',address:'49 Leigham Court Road, Streatham, SW16 2NF'},
-      {code:'7AN67',name:'Animal Choice',address:'67 Upper Tooting Park, Tooting, SW17 7SU'},
-      {code:'VO3B',name:'Voo Vets – Balham',address:'31 Bedford Rd, Balham, SW12 9EY'},
-      {code:'7ST10',name:'Streatham Hill Vet Surgery',address:'101 Sternhold Ave, Streatham Hill, SW2 4PF'},
-      {code:'HY64',name:'Voo Vets – Battersea',address:'644a Wandsworth Road, London, SW8 3JW'},
-      {code:'7AL85',name:'All Creatures Vet Surgery',address:'85 Lavender Hill, Battersea, SW11 5QL'},
-      {code:'BA4B',name:'Battersea Dogs & Cats Home',address:'4 Battersea Park Road, London, SW8 4AA'},
-      {code:'7EL55',name:'Elizabeth Street Vet Clinic',address:'55 Elizabeth St, London, SW1W 9PP'},
-      {code:'Z1K',name:'Blue Cross Animal Hospital (Victoria)',address:'Shephard House, 1–5 Hugh St, Victoria, SW1V 1QQ'},
-      {code:'VBR',name:'Virtue Vets – Chelsea',address:'295–297 Brompton Rd, London, SW3 2DY'},
-      {code:'7BR96',name:'Brompton Vets',address:'90 Fulham Road, London, SW3 6HR'},
-      {code:'CFU',name:'Creature Comforts – Chelsea',address:'281 Fulham Road, Chelsea, SW10 9PZ'},
-      {code:'VBO',name:'Virtue Vets – Chelsea The Boltons',address:'351 Fulham Road, Chelsea, SW10 9TW'},
-      {code:'CH36',name:'Waggintails – Chelsea Vet Clinic',address:'364 Fulham Rd, Chelsea, SW10 9UU'},
-      {code:'7AB85',name:'Abingdon Vet Surgery',address:'85 Earls Court Road, London, W8 6EF'},
-      {code:'7ADAD',name:'The Holland Park Vet Clinic',address:'7 Addison Ave, Holland Park, London, W11 4QS'},
-      {code:'CCN',name:'Creature Comforts – Notting Hill',address:'241 Westbourne Grove, Notting Hill, W11 2SE'},
-      {code:'VIN',name:'Virtue Vets – Notting Hill',address:'20 Chepstow Corner, Chepstow Place, Notting Hill, W2 4XE'},
-      {code:'CCS',name:'Creature Comforts – St Johns Wood',address:'9–11 St Johns Wood High St, NW8 7NG'},
-      {code:'VVM',name:'Virtue Vet – Marylebone',address:'6 Nottingham Street, Marylebone, W1U 5EJ'},
-      {code:'Z4K',name:'Blue Cross Animal Hospital (Hammersmith)',address:'Argyle Place, Hammersmith, W6 0RQ'},
-      {code:'CPU',name:'Creature Comforts – Putney',address:'212 Putney Bridge Rd, SW15 2NA'},
-      {code:'7DA8B',name:'Voo Vet Group – Wandsworth',address:'8 Barmouth Road, London, SW18 2DN'},
-      {code:'SC3E',name:'Scourfield Vet Services',address:'49 Heythorp Street, London, SW18 5BS'},
-      {code:'Z2K',name:'Blue Cross Vets Merton',address:'88–92 Merton High St, Merton, SW19 1BD'},
-      {code:'7FO17',name:'Wimbledon Veterinary Surgery',address:'170–172 Merton Road, Wimbledon, SW19 1EG'},
-      {code:'IS1M',name:'Islander Vets',address:'129 Manor Drive North, New Malden, KT3 5PD'}
-    ];
+    // Final clinic for drop location
+    const FINAL = { code: 'DROP', name: 'Orchard Business Park, Forsyth Rd, Woking GU21 5SB', address: 'Orchard Business Park, Forsyth Rd, Woking GU21 5SB' };
 
-    const FINAL = {code:'DROP',name:'Orchard Business Park, Forsyth Rd, Woking GU21 5SB',address:'Orchard Business Park, Forsyth Rd, Woking GU21 5SB'};
-
+    // Instructions for some clinics
     const INSTRUCTIONS = {
       CFU: 'Unlock door with square headed key. Remove key. Unlock door magnet with pin code 0725. Disarm alarm with code 0725 and tick. Pick up package from reception desk. If no package, take a photograph. Arm alarm 0725 and tick. Press magnet release to open door. Lock door with key.',
       CPU: 'Box is at the back on a side road (Deodar Road), alleyway all the way at the end of alley.',
@@ -297,47 +253,47 @@ document.getElementById('change-nav').addEventListener('click', async () => {
       AV4L: 'No special instructions.'
     };
 
-    // Approximate coordinates for routing (replace with exact for better results)
+    // Coordinates for the clinics
     const CLINIC_COORDS = {
-      Z2K: {lat:51.409, lon:-0.177},
-      '7FO17': {lat:51.4210, lon:-0.2083},
-      '7KY13': {lat:51.424, lon:-0.205},
-      TH1S: {lat:51.364, lon:-0.193},
-      PR11: {lat:51.278, lon:-0.239},
-      KGVS: {lat:51.311, lon:-0.187},
-      WL3A: {lat:51.334, lon:-0.270},
-      HEWP: {lat:51.364, lon:-0.216},
-      WICO: {lat:51.334, lon:-0.268},
-      ARVS: {lat:51.370, lon:-0.161},
-      PKS: {lat:51.350, lon:-0.163},
-      OR1M: {lat:51.403, lon:-0.169},
-      MIUG: {lat:51.401, lon:-0.169},
-      TO5L: {lat:51.428, lon:-0.164},
-      AV4L: {lat:51.431, lon:-0.128},
-      '7AN67': {lat:51.427, lon:-0.165},
-      VO3B: {lat:51.442, lon:-0.152},
-      '7ST10': {lat:51.433, lon:-0.116},
-      HY64: {lat:51.475, lon:-0.156},
-      '7AL85': {lat:51.472, lon:-0.159},
-      BA4B: {lat:51.480, lon:-0.154},
-      '7EL55': {lat:51.497, lon:-0.135},
-      Z1K: {lat:51.495, lon:-0.141},
-      VBR: {lat:51.496, lon:-0.162},
-      '7BR96': {lat:51.492, lon:-0.190},
-      CFU: {lat:51.488, lon:-0.162},
-      VBO: {lat:51.488, lon:-0.162},
-      CH36: {lat:51.487, lon:-0.163},
-      '7AB85': {lat:51.494, lon:-0.192},
-      '7ADAD': {lat:51.512, lon:-0.204},
-      CCN: {lat:51.512, lon:-0.206},
-      VIN: {lat:51.513, lon:-0.202},
-      CCS: {lat:51.532, lon:-0.174},
-      VVM: {lat:51.519, lon:-0.138},
-      Z4K: {lat:51.492, lon:-0.227},
-      CPU: {lat:51.463, lon:-0.2158},
-      '7DA8B': {lat:51.444, lon:-0.174},
-      SC3E: {lat:51.452, lon:-0.181},
-      IS1M: {lat:51.396, lon:-0.252}
+      Z2K: { lat: 51.409, lon: -0.177 },
+      '7FO17': { lat: 51.4210, lon: -0.2083 },
+      '7KY13': { lat: 51.424, lon: -0.205 },
+      TH1S: { lat: 51.364, lon: -0.193 },
+      PR11: { lat: 51.278, lon: -0.239 },
+      KGVS: { lat: 51.311, lon: -0.187 },
+      WL3A: { lat: 51.334, lon: -0.270 },
+      HEWP: { lat: 51.364, lon: -0.216 },
+      WICO: { lat: 51.334, lon: -0.268 },
+      ARVS: { lat: 51.370, lon: -0.161 },
+      PKS: { lat: 51.350, lon: -0.163 },
+      OR1M: { lat: 51.403, lon: -0.169 },
+      MIUG: { lat: 51.401, lon: -0.169 },
+      TO5L: { lat: 51.428, lon: -0.164 },
+      AV4L: { lat: 51.431, lon: -0.128 },
+      '7AN67': { lat: 51.427, lon: -0.165 },
+      VO3B: { lat: 51.442, lon: -0.152 },
+      '7ST10': { lat: 51.433, lon: -0.116 },
+      HY64: { lat: 51.475, lon: -0.156 },
+      '7AL85': { lat: 51.472, lon: -0.159 },
+      BA4B: { lat: 51.480, lon: -0.154 },
+      '7EL55': { lat: 51.497, lon: -0.135 },
+      Z1K: { lat: 51.495, lon: -0.141 },
+      VBR: { lat: 51.496, lon: -0.162 },
+      '7BR96': { lat: 51.492, lon: -0.190 },
+      CFU: { lat: 51.488, lon: -0.162 },
+      VBO: { lat: 51.488, lon: -0.162 },
+      CH36: { lat: 51.487, lon: -0.163 },
+      '7AB85': { lat: 51.494, lon: -0.192 },
+      '7ADAD': { lat: 51.512, lon: -0.204 },
+      CCN: { lat: 51.512, lon: -0.206 },
+      VIN: { lat: 51.513, lon: -0.202 },
+      CCS: { lat: 51.532, lon: -0.174 },
+      VVM: { lat: 51.519, lon: -0.138 },
+      Z4K: { lat: 51.492, lon: -0.227 },
+      CPU: { lat: 51.463, lon: -0.2158 },
+      '7DA8B': { lat: 51.444, lon: -0.174 },
+      SC3E: { lat: 51.452, lon: -0.181 },
+      IS1M: { lat: 51.396, lon: -0.252 }
     };
 
     // -------------------------
@@ -345,532 +301,153 @@ document.getElementById('change-nav').addEventListener('click', async () => {
     // -------------------------
     let state = {area:null, parsed:[]};
     let coverStartPoint = null;
-
-    function load(){
+    function load() {
       const raw = localStorage.getItem(userStorageKey());
-      if(raw){
-        try{ state = JSON.parse(raw); }catch(e){ console.warn('load err',e); }
+      if (raw) {
+        try {
+          state = JSON.parse(raw);
+        } catch (e) {
+          console.warn('load err', e);
+        }
       }
     }
-    function save(){
+
+    function save() {
       state.savedAt = new Date().toISOString();
       localStorage.setItem(userStorageKey(), JSON.stringify(state));
-      const el = document.getElementById('saved-ind'); if(el) el.innerText = new Date(state.savedAt).toLocaleTimeString();
-    }
-
-    // -------------------------
-    // PARSER
-    // -------------------------
-    function parseText(text){
-      const noTotals = text.replace(/TOTAL\s+\d+/ig,'');
-      const tokens = noTotals.split(/[^A-Za-z0-9]+/).map(t=>t.trim().toUpperCase()).filter(Boolean);
-      const days = ['MON','TUE','WED','THU','FRI','SAT','SUN','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
-      let filtered = tokens.filter(t=>!days.includes(t));
-      filtered = filtered.filter(t=>!/^\d+$/.test(t));
-      const candidate = filtered.filter(t=>/^[A-Z0-9]{2,6}$/.test(t));
-      const seen = new Set();
-      return candidate.filter(c=>{ if(seen.has(c)) return false; seen.add(c); return true; });
-    }
-
-    // -------------------------
-    // MASTER SELECTOR
-    // -------------------------
-    function getMasterList(){
-      if(state.area === 'Surrey') return MASTER_SURREY;
-      return MASTER_MERTON;
-    }
-
-    // -------------------------
-    // DISTANCE + ROUTE OPTIMISER
-    // -------------------------
-    function haversine(a,b){
-      const R = 6371;
-      const dLat = (b.lat - a.lat) * Math.PI/180;
-      const dLon = (b.lon - a.lon) * Math.PI/180;
-      const lat1 = a.lat * Math.PI/180;
-      const lat2 = b.lat * Math.PI/180;
-      const x = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
-      return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
-    }
-
-    function twoOpt(route){
-      let improved = true;
-      while(improved){
-        improved = false;
-        for(let i=1;i<route.length-2;i++){
-          for(let k=i+1;k<route.length-1;k++){
-            const a = route[i-1].coords;
-            const b = route[i].coords;
-            const c = route[k].coords;
-            const d = route[k+1].coords;
-            const before = haversine(a,b) + haversine(c,d);
-            const after = haversine(a,c) + haversine(b,d);
-            if(after + 0.000001 < before){
-              const seg = route.slice(i,k+1).reverse();
-              route.splice(i, k-i+1, ...seg);
-              improved = true;
-            }
-          }
-        }
-      }
-      return route;
-    }
-
-    function optimizeCoverRoute(codes){
-      // Combine masters to a lookup
-      const masterAll = MASTER_MERTON.concat(MASTER_SURREY).reduce((acc,m)=>{acc[m.code]=m; return acc;},{});
-      const objs = codes.map(code=>{
-        const found = masterAll[code];
-        return {
-          code,
-          name: found ? found.name : code,
-          address: found ? found.address : '',
-          coords: CLINIC_COORDS[code] || null
-        };
-      }).filter(Boolean);
-
-      // attempt to approximate coords if missing
-      objs.forEach(o=>{
-        if(!o.coords){
-          const addr = (o.address||'').toLowerCase();
-          if(addr.includes('streatham')) o.coords = CLINIC_COORDS['AV4L'];
-          else if(addr.includes('epsom')) o.coords = CLINIC_COORDS['WL3A'];
-          else if(addr.includes('wimbledon')) o.coords = CLINIC_COORDS['7FO17'];
-          else if(addr.includes('merton')) o.coords = CLINIC_COORDS['Z2K'];
-          else if(addr.includes('tooting')) o.coords = CLINIC_COORDS['TO5L'];
-          else if(addr.includes('putney')) o.coords = CLINIC_COORDS['CPU'];
-        }
-        if(!o.coords) o.coords = {lat:51.46, lon:-0.15}; // fallback centre
-      });
-
-      const start = coverStartPoint || {lat:51.46, lon:-0.15};
-      const drop = {lat:51.3190, lon:-0.5584}; // Woking
-
-      // nearest neighbour
-      let remaining = objs.slice();
-      const route = [];
-      let current = start;
-      while(remaining.length){
-        let nearestIdx = 0;
-        let nearestDist = haversine(current, remaining[0].coords);
-        for(let i=1;i<remaining.length;i++){
-          const d = haversine(current, remaining[i].coords);
-          if(d < nearestDist){ nearestDist = d; nearestIdx = i; }
-        }
-        const next = remaining.splice(nearestIdx,1)[0];
-        route.push(next);
-        current = next.coords;
-      }
-
-      // append drop
-      route.push({...FINAL, coords: drop});
-
-      if(route.length > 3){
-        const improved = twoOpt(route);
-        return improved.map(s=>({code:s.code, name:s.name, address:s.address, info: INSTRUCTIONS[s.code]||''}));
-      }
-      return route.map(s=>({code:s.code, name:s.name, address:s.address, info: INSTRUCTIONS[s.code]||''}));
+      const el = document.getElementById('saved-ind');
+      if (el) el.innerText = new Date(state.savedAt).toLocaleTimeString();
     }
 
     // ===============================
-    // UI refs & flow
+    // CLINIC ID VALIDATION
     // ===============================
-    const chooseScreen = document.getElementById('choose-screen');
-    const inputScreen = document.getElementById('input-screen');
-    const listScreen = document.getElementById('list-screen');
-    const coverStartScreen = document.getElementById('cover-start-screen');
-    const rawInput = document.getElementById('raw-input');
-    const parseBtn = document.getElementById('parse-btn');
-    const clearBtn = document.getElementById('clear-btn');
-    const checklist = document.getElementById('checklist');
-    const progressBar = document.getElementById('progress-bar');
-    const progressText = document.getElementById('progress-text');
-    const areaLabel = document.getElementById('area-label');
-    const runInfo = document.getElementById('run-info');
+    const validClinicIDs = [
+      'Z2K', '7FO17', '7KY13', 'TH1S', 'PR11', 'KGVS', 'WL3A', 'HEWP', 'WICO', 'ARVS',
+      'PKS', 'OR1M', 'MIUG', 'TO5L', 'AV4L', '7ST10', 'VO3B', '7AN67', 'HY64', '7AL85',
+      'BA4B', '7EL55', 'Z1K', 'VBR', '7BR96', 'CFU', 'VBO', 'CH36', '7AB85', '7ADAD',
+      'CCN', 'VIN', 'CCS', 'VVM', 'Z4K', 'CPU', '7DA8B', 'SC3E', 'IS1M'
+    ];
 
-    document.getElementById('back-to-choose').addEventListener('click', ()=> show('choose'));
-
-    // Area selection
-    document.querySelectorAll('.btn-choose').forEach(b => b.addEventListener('click', e=>{
-      const a = e.target.dataset.area;
-      state.area = a;
-      if(a === 'Cover'){
-        show('cover-start');
-      } else {
-        areaLabel.innerText = a + ' — Paste & parse';
-        show('input');
-      }
-      save();
-    }));
-
-    // Cover start controls
-    document.getElementById('cover-back-btn').addEventListener('click', ()=> show('choose'));
-    document.getElementById('cover-gps-btn').addEventListener('click', ()=>{
-      if(!navigator.geolocation){ alert('GPS not supported'); return; }
-      navigator.geolocation.getCurrentPosition(pos=>{
-        coverStartPoint = {lat: pos.coords.latitude, lon: pos.coords.longitude};
-        areaLabel.innerText = 'Cover — Paste & parse';
-        show('input');
-      }, err => alert('GPS error: ' + err.message));
-    });
-    document.getElementById('cover-address-btn').addEventListener('click', ()=>{
-      const addr = document.getElementById('cover-address-input').value.trim();
-      if(!addr){ alert('Enter address'); return; }
-      geocodeAddress(addr).then(coord=>{
-        coverStartPoint = coord;
-        areaLabel.innerText = 'Cover — Paste & parse';
-        show('input');
-      }).catch(()=> alert('Address not recognized — try a nearby town name (e.g., Streatham)'));
-    });
-
-    function geocodeAddress(addr){
-      const a = addr.toLowerCase();
-      if(a.includes('woking')) return Promise.resolve({lat:51.3190, lon:-0.5584});
-      if(a.includes('streatham')) return Promise.resolve({lat:51.431, lon:-0.128});
-      if(a.includes('wimbledon')) return Promise.resolve({lat:51.4210, lon:-0.2083});
-      if(a.includes('epsom')) return Promise.resolve({lat:51.334, lon:-0.270});
-      if(a.includes('mitcham')) return Promise.resolve({lat:51.401, lon:-0.169});
-      if(a.includes('merton')) return Promise.resolve({lat:51.409, lon:-0.177});
-      if(a.includes('tooting')) return Promise.resolve({lat:51.428, lon:-0.164});
-      if(a.includes('balham')) return Promise.resolve({lat:51.442, lon:-0.152});
-      if(a.includes('putney')) return Promise.resolve({lat:51.463, lon:-0.216});
-      if(a.includes('wandsworth')) return Promise.resolve({lat:51.459, lon:-0.191});
-      if(a.includes('chelsea')) return Promise.resolve({lat:51.492, lon:-0.160});
-      if(a.includes('notting hill')) return Promise.resolve({lat:51.512, lon:-0.206});
-      return Promise.reject();
-    }
-
-    // Parse button
-    parseBtn.addEventListener('click', ()=>{
-      const txt = rawInput.value || '';
-      const codes = parseText(txt);
-      buildList(codes);
-      show('list');
-      save();
-    });
-    clearBtn.addEventListener('click', ()=> rawInput.value='');
-
-    // Add manual
-    document.getElementById('add-btn').addEventListener('click', ()=>{
-      const v = document.getElementById('add-code').value.trim();
-      if(!v) return;
-      addManual(v);
-      document.getElementById('add-code').value='';
-      save();
-    });
-
-    // Logout
-    document.getElementById('logout-btn').addEventListener('click', () => {
-  if (!confirm("Are you sure you want to log out?")) return;
-
-  localStorage.removeItem('active_clinix_user');
-  ACTIVE_USER = null;
-  state = {area:null, parsed:[]};
-  coverStartPoint = null;
-  showLogin();
-});
-
-
-    // -------------------------
-    // buildList (handles cover)
-    // -------------------------
-    function buildList(codes){
-      if(state.area === 'Cover'){
-        const seq = optimizeCoverRoute(codes);
-        state.parsed = seq.map(s=>({
-          code: s.code,
-          name: s.name || s.code,
-          address: s.address || '',
-          info: INSTRUCTIONS[s.code] || '',
-          selected: null,
-          quantity: null,
-          icebox: false,
-          done: false,
-          added: false
-        }));
-        if(state.parsed[state.parsed.length-1].code !== 'DROP') state.parsed.push({...FINAL, selected:null, quantity:null, icebox:false, done:false});
-        save();
-        return;
-      }
-
-      const MASTER = getMasterList();
-      const masterIndex = {};
-      MASTER.forEach((m,i)=> masterIndex[m.code]=i);
-
-      const objs = codes.map(code=>{
-        const found = MASTER.find(m=>m.code===code) || MASTER_MERTON.find(m=>m.code===code) || MASTER_SURREY.find(m=>m.code===code);
-        return {
-          code,
-          name: found?found.name:code,
-          address: found?found.address:'',
-          info: INSTRUCTIONS[code]||'',
-          selected:null,
-          quantity:null,
-          icebox:false,
-          done:false,
-          added:false
-        };
-      });
-
-      const known = objs.filter(o=>masterIndex[o.code]!==undefined).sort((a,b)=>masterIndex[a.code]-masterIndex[b.code]);
-      const unknown = objs.filter(o=>masterIndex[o.code]===undefined).sort((a,b)=>a.code.localeCompare(b.code));
-      state.parsed = [...known,...unknown,{...FINAL, selected:null, quantity:null, icebox:false, done:false}];
-      save();
-    }
-
-    function addManual(input){
-  const code = input.toUpperCase().replace(/[^A-Z0-9]/g,'');
-  const MASTER = getMasterList(); // Correct master list based on Surrey/Merton selection
-
-  // Find if code exists in master lists
-  const found = MASTER.find(m=>m.code===code) 
-              || MASTER_MERTON.find(m=>m.code===code) 
-              || MASTER_SURREY.find(m=>m.code===code);
-
-  // Build new clinic object
-  const obj = {
-    code: code || input,
-    name: found ? found.name : input,
-    address: found ? found.address : '',
-    info: INSTRUCTIONS[code] || '',
-    selected:null,
-    quantity:null,
-    icebox:false,
-    done:false,
-    added:true
-  };
-
-  // Remove DROP
-  let withoutFinal = state.parsed.filter(p => p.code !== 'DROP');
-
-  // Insert in correct master order:
-  if (found) {
-    // Get master index for sorting
-    const masterIndex = {};
-    MASTER.forEach((m,i)=> masterIndex[m.code] = i);
-
-    // Insert the new item
-    withoutFinal.push(obj);
-
-    // Sort known items by master sequence
-    withoutFinal.sort((a,b)=>{
-      const ai = masterIndex[a.code];
-      const bi = masterIndex[b.code];
-
-      // Both in master list → compare positions
-      if (ai !== undefined && bi !== undefined) return ai - bi;
-
-      // Only one in master → master comes first
-      if (ai !== undefined) return -1;
-      if (bi !== undefined) return 1;
-
-      // None in master → alphabetical fallback
-      return a.code.localeCompare(b.code);
-    });
-
-  } else {
-    // Unknown clinic → insert after known ones but before DROP
-    withoutFinal.push(obj);
-  }
-
-  // Add DROP back at end
-  const final = state.parsed.find(p=>p.code==='DROP') || 
-                {...FINAL, selected:null, quantity:null, icebox:false, done:false};
-
-  state.parsed = [...withoutFinal, final];
-  save();
-  renderList();
-}
-
-
-    // -------------------------
-    // RENDER LIST + CONTROLS
-    // -------------------------
-    function renderList(){
-      checklist.innerHTML = '';
-      state.parsed.forEach((item, idx)=>{
-        const card = document.createElement('div'); card.className='card';
-        const top = document.createElement('div'); top.className='top';
-        const title = document.createElement('div');
-        title.innerHTML = `<div class="clinic-title">${escapeHtml(item.name)}</div><div class="clinic-code">${item.code}</div>`;
-        top.appendChild(title);
-        const right = document.createElement('div');
-
-        const goBtn = document.createElement('button'); goBtn.className='chip small'; goBtn.innerText='GO';
-        goBtn.addEventListener('click', ()=> openMaps(item)); right.appendChild(goBtn);
-
-        const infoBtn = document.createElement('button'); infoBtn.className='chip small'; infoBtn.innerText='INFO';
-        infoBtn.addEventListener('click', ()=> alert(item.info || (item.name + '\n\nNo additional instructions.'))); right.appendChild(infoBtn);
-
-        top.appendChild(right); card.appendChild(top);
-
-        const controls = document.createElement('div'); controls.className='controls';
-
-        if(item.code === 'DROP'){
-          const doneBtn = document.createElement('button');
-          doneBtn.className = item.done ? 'undo' : 'done';
-          doneBtn.innerText = item.done ? 'Undo' : 'Done';
-          doneBtn.addEventListener('click', ()=> { item.done = !item.done; save(); renderList(); });
-          controls.appendChild(doneBtn);
-        } else {
-          const ax = buttonChip('AXIOM','blue',item);
-          const fi = buttonChip('FINN','green',item);
-          const nt = buttonChip('NTC','grey',item);
-          controls.appendChild(ax); controls.appendChild(fi); controls.appendChild(nt);
-
-          const qtyWrap = document.createElement('div'); qtyWrap.className='qtys';
-          for(let i=1;i<=10;i++){
-            const q = document.createElement('div'); q.className='qty'; q.innerText = i;
-            if(item.quantity === i) q.classList.add('selected');
-            q.addEventListener('click', ()=> { item.quantity = (item.quantity === i ? null : i); save(); renderList(); });
-            qtyWrap.appendChild(q);
-          }
-          const ice = document.createElement('div'); ice.className='qty'; ice.innerText='Ice Box';
-          if(item.icebox) ice.classList.add('selected');
-          ice.addEventListener('click', ()=> { item.icebox = !item.icebox; save(); renderList(); });
-          qtyWrap.appendChild(ice);
-          controls.appendChild(qtyWrap);
-
-          const doneBtn = document.createElement('button');
-          doneBtn.disabled = !(item.selected && (item.selected === 'NTC' || item.quantity !== null || item.icebox === true));
-          doneBtn.className = item.done ? 'undo' : 'done';
-          doneBtn.innerText = item.done ? 'Undo' : 'Done';
-          doneBtn.addEventListener('click', ()=>{
-            if(!item.done){
-              if(!item.selected){ alert('Select AXIOM, FINN or NTC'); return; }
-              if(item.selected !== 'NTC' && item.quantity === null && !item.icebox){ alert('Select quantity or Ice Box (or choose NTC)'); return; }
-            }
-            item.done = !item.done; save(); renderList();
+    function addNewClinic() {
+      const clinicID = document.getElementById('add-code').value.trim().toUpperCase();
+      if (validClinicIDs.includes(clinicID)) {
+        const clinic = MASTER_MERTON.find(item => item.code === clinicID);
+        if (clinic) {
+          state.parsed.push({
+            code: clinic.code,
+            name: clinic.name,
+            address: clinic.address,
+            selected: null,
+            quantity: null,
+            icebox: false,
+            done: false
           });
-          controls.appendChild(doneBtn);
+          state.parsed.sort((a, b) => {
+            return validClinicIDs.indexOf(a.code) - validClinicIDs.indexOf(b.code);
+          });
+          renderList();
         }
+      } else {
+        alert('Invalid clinic ID. Please enter a valid ID.');
+      }
+    }
 
-        card.appendChild(controls);
+    document.getElementById('add-btn').addEventListener('click', addNewClinic);
+
+    function renderList() {
+      const checklist = document.getElementById('checklist');
+      checklist.innerHTML = '';
+
+      state.parsed.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="top">
+            <div class="clinic-title">
+              <span class="surgery-name">${item.name}</span>
+              <span class="info-link" onclick="showInfo('${item.name}')">INFO</span>
+            </div>
+            <div class="go-btn">
+              <button class="chip green">GO</button>
+            </div>
+          </div>
+        `;
         checklist.appendChild(card);
       });
-      updateProgress();
     }
 
-    function buttonChip(label,color,item){
-      const b = document.createElement('button');
-      b.className = 'chip ' + color;
-      b.innerText = label;
-      if(item.selected === label) b.style.outline = '3px solid rgba(0,0,0,0.15)';
-      b.addEventListener('click', ()=> { item.selected = label; if(label === 'NTC') { item.quantity = null; item.icebox = false; } save(); renderList(); });
-      return b;
+    function showInfo(name) {
+      alert(`Info for ${name}`);
     }
 
-    function updateProgress(){
-      const total = state.parsed.length;
-      const done = state.parsed.filter(p=>p.done).length;
-      const pct = total ? Math.round((done/total)*100) : 0;
-      progressBar.style.width = pct + '%';
-      progressText.innerText = pct + '%';
-      runInfo.innerText = (state.area || 'Run') + ' — ' + done + '/' + total;
-
-      // remove earlier dynamic end trip button if any
-      const oldBtn = document.getElementById('endtrip'); if(oldBtn) oldBtn.remove();
-
-      if(done === total && total > 0){
-        const footer = document.querySelector('footer');
-        const btn = document.createElement('button'); btn.id = 'endtrip'; btn.className = 'endtrip'; btn.innerText = 'End Trip';
-        btn.addEventListener('click', ()=>{
-          if (!confirm("Are you sure you want to END this trip? All progress will be cleared.")) {
-    return;
-}
-
-localStorage.removeItem(userStorageKey());
-state = {area:null, parsed:[]};
-coverStartPoint = null;
-save();
-show('choose');
-
-          }
-        });
-        footer.appendChild(btn);
+    function logout() {
+      if (confirm("Are you sure you want to log out? All progress will be cleared.")) {
+        localStorage.removeItem('active_clinix_user');
+        state = { area: null, parsed: [] };
+        window.location.href = './login.html';
       }
     }
 
-    async function openMaps(item){
-  let app = getNavApp();
+    // Add event listener for logout
+    document.getElementById('logout-btn').addEventListener('click', logout);
 
-  // First-time GO of the day → ask user
-  if (!app) {
-    app = await chooseNavApp();
-  }
-
-  const q = encodeURIComponent(item.address || item.name);
-
-  if (app === "google") {
-    window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, "_blank");
-  }
-  else if (app === "apple") {
-    window.open(`http://maps.apple.com/?q=${q}`, "_blank");
-  }
-  else if (app === "waze") {
-    window.open(`https://waze.com/ul?q=${q}`, "_blank");
-  }
-}
-
-
-    function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-    // -------------------------
+    // ===============================
     // INITIAL LOAD / SHOW / LOGIN
-    // -------------------------
-    function show(which){
-      // screens
+    // ===============================
+    function show(which) {
       document.getElementById('login-screen').style.display = 'none';
-      chooseScreen.style.display = which==='choose' ? 'block' : 'none';
-      coverStartScreen.style.display = which==='cover-start' ? 'block' : 'none';
-      inputScreen.style.display = which==='input' ? 'block' : 'none';
-      listScreen.style.display = which==='list' ? 'block' : 'none';
-      // render list if needed
-      if(which === 'list') renderList();
+      chooseScreen.style.display = which === 'choose' ? 'block' : 'none';
+      coverStartScreen.style.display = which === 'cover-start' ? 'block' : 'none';
+      inputScreen.style.display = which === 'input' ? 'block' : 'none';
+      listScreen.style.display = which === 'list' ? 'block' : 'none';
+
+      if (which === 'list') renderList();
     }
 
-    function showLogin(){
+    function showLogin() {
       document.getElementById('login-screen').style.display = 'block';
       document.getElementById('app').style.display = 'none';
     }
-    function showApp(){
+
+    function showApp() {
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
     }
 
     // Auto-login if saved
     const savedUser = localStorage.getItem('active_clinix_user');
-    if(savedUser && USERS[savedUser]){
+    if (savedUser && USERS[savedUser]) {
       ACTIVE_USER = savedUser;
       load();
       showApp();
-      if(state.parsed && state.parsed.length>0) show('list');
-      else if(state.area) { areaLabel.innerText = state.area + ' — Paste & parse'; show('input'); }
+      if (state.parsed && state.parsed.length > 0) show('list');
+      else if (state.area) { areaLabel.innerText = state.area + ' — Paste & parse'; show('input'); }
       else show('choose');
     } else {
       showLogin();
     }
 
     // Login button
-    document.getElementById('login-btn').addEventListener('click', ()=>{
+    document.getElementById('login-btn').addEventListener('click', () => {
       const user = document.getElementById('login-username').value.trim();
       const pass = document.getElementById('login-password').value;
-      if(USERS[user] && USERS[user] === pass){
+      if (USERS[user] && USERS[user] === pass) {
         ACTIVE_USER = user;
         localStorage.setItem('active_clinix_user', user);
         load();
         showApp();
-        if(state.parsed && state.parsed.length>0) show('list');
-        else if(state.area) { areaLabel.innerText = state.area + ' — Paste & parse'; show('input'); }
+        if (state.parsed && state.parsed.length > 0) show('list');
+        else if (state.area) { areaLabel.innerText = state.area + ' — Paste & parse'; show('input'); }
         else show('choose');
       } else {
         document.getElementById('login-error').style.display = 'block';
       }
     });
 
-    // register service worker
-    if('serviceWorker' in navigator){
-      try{ navigator.serviceWorker.register('service-worker.js'); } catch(e){ console.warn('SW failed', e); }
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      try { navigator.serviceWorker.register('service-worker.js'); } catch (e) { console.warn('SW failed', e); }
     }
   </script>
 </body>
