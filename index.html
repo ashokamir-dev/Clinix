@@ -108,6 +108,12 @@
           <h1>Checklist</h1>
           <div style="font-size:13px;color:var(--muted)" id="run-info">Area</div>
         </div>
+<!-- Change navigation app -->
+<div style="text-align:right;margin:5px 0;">
+  <span id="change-nav" style="font-size:13px;color:#0b69ff;cursor:pointer;text-decoration:underline;">
+    Change Navigation App
+  </span>
+</div>
 
         <!-- Logout -->
         <div style="text-align:right;margin-bottom:10px">
@@ -147,6 +153,44 @@
       "dhanu":   "dhanu25!"
     };
     let ACTIVE_USER = null;
+
+    // Navigation app preference per user
+function navKey() {
+  return ACTIVE_USER ? `nav_app_${ACTIVE_USER}` : `nav_app_temp`;
+}
+
+function getNavApp() {
+  return localStorage.getItem(navKey()) || null;
+}
+
+function setNavApp(app) {
+  localStorage.setItem(navKey(), app);
+}
+
+// Show prompt to pick app
+function chooseNavApp() {
+  return new Promise(resolve => {
+    const app = prompt(
+      "Choose navigation app:\n1 = Google Maps\n2 = Apple Maps\n3 = Waze",
+      "1"
+    );
+
+    let chosen = null;
+
+    if (app === "1") chosen = "google";
+    if (app === "2") chosen = "apple";
+    if (app === "3") chosen = "waze";
+
+    if (!chosen) chosen = "google"; // default fallback
+
+    setNavApp(chosen);
+    resolve(chosen);
+  });
+}
+document.getElementById('change-nav').addEventListener('click', async () => {
+  await chooseNavApp();
+  alert("Navigation app updated for this session.");
+});
 
     // Helper storage key per user
     function userStorageKey(){
@@ -696,10 +740,27 @@
       }
     }
 
-    function openMaps(item){
-      const q = encodeURIComponent(item.address || item.name);
-      window.open('https://www.google.com/maps/search/?api=1&query=' + q, '_blank');
-    }
+    async function openMaps(item){
+  let app = getNavApp();
+
+  // First-time GO of the day → ask user
+  if (!app) {
+    app = await chooseNavApp();
+  }
+
+  const q = encodeURIComponent(item.address || item.name);
+
+  if (app === "google") {
+    window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, "_blank");
+  }
+  else if (app === "apple") {
+    window.open(`http://maps.apple.com/?q=${q}`, "_blank");
+  }
+  else if (app === "waze") {
+    window.open(`https://waze.com/ul?q=${q}`, "_blank");
+  }
+}
+
 
     function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
